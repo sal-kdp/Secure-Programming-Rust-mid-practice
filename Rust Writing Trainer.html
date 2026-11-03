@@ -1,0 +1,1378 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Rust Writing Trainer</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,500..800&family=IBM+Plex+Sans+Arabic:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: a workbench. Sticky header with sections + language; skill sheets read top to bottom (form → points → mistakes → practice); programs are a task card beside a help drawer. */
+:root{
+  --bg:#ECEEF0; --surface:#FFFFFF; --sunk:#E2E5E8; --ink:#14171B; --muted:#58616A; --line:#D2D7DC;
+  --oxide:#A9461A; --oxide-soft:#F6E3D8; --patina:#23736A; --patina-soft:#DDF0EC; --bad:#B42318; --bad-soft:#FBE4E1;
+  --code-bg:#1A1D21; --code-fg:#E6E8EA; --k:#F0915A; --s:#9CD3A5; --c:#7D8790; --n:#E9C46A; --m:#8EC5F0;
+  --display:"Archivo", "Helvetica Neue", Arial, sans-serif;
+  --body:"IBM Plex Sans Arabic", "Segoe UI", system-ui, sans-serif;
+  --mono:"JetBrains Mono", ui-monospace, "SFMono-Regular", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#111315; --surface:#1A1D20; --sunk:#23272B; --ink:#E8EAEC; --muted:#9AA3AC; --line:#2E3338;
+  --oxide:#E5814F; --oxide-soft:#3A2419; --patina:#5DB8AB; --patina-soft:#16302C; --bad:#F2796B; --bad-soft:#3A1C19; --code-bg:#0B0D0F; color-scheme:dark; } }
+:root[data-theme="dark"]{
+  --bg:#111315; --surface:#1A1D20; --sunk:#23272B; --ink:#E8EAEC; --muted:#9AA3AC; --line:#2E3338;
+  --oxide:#E5814F; --oxide-soft:#3A2419; --patina:#5DB8AB; --patina-soft:#16302C; --bad:#F2796B; --bad-soft:#3A1C19; --code-bg:#0B0D0F; color-scheme:dark; }
+*{box-sizing:border-box}
+body{background:var(--bg); color:var(--ink); font-family:var(--body); font-size:15.5px; line-height:1.6}
+body::before{content:""; position:fixed; inset:0 0 auto; height:env(safe-area-inset-top,0px); z-index:10; background:var(--surface)}
+.wrap{max-width:960px; margin:0 auto; padding-left:max(16px, env(safe-area-inset-left,0px)); padding-right:max(16px, env(safe-area-inset-right,0px))}
+header.top{background:var(--surface); border-bottom:1px solid var(--line); position:sticky; top:env(safe-area-inset-top,0px); z-index:5}
+.brand{display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; padding-block:12px 6px}
+.brand h1{font-family:var(--display); font-stretch:112%; font-weight:800; font-size:1.3rem; margin:0}
+.brand h1 b{color:var(--oxide)}
+nav.tabs{display:flex; gap:2px; overflow-x:auto; scrollbar-width:none}
+nav.tabs::-webkit-scrollbar{display:none}
+.tab{font-family:var(--display); font-weight:600; font-size:.92rem; border:0; background:none; color:var(--muted); padding:9px 12px 10px; border-bottom:3px solid transparent; cursor:pointer; white-space:nowrap}
+.tab:hover{color:var(--ink)} .tab[aria-selected="true"]{color:var(--ink); border-bottom-color:var(--oxide)}
+.tab small{font-family:var(--body); font-weight:500; margin-left:6px; color:var(--muted)}
+:focus-visible{outline:2px solid var(--oxide); outline-offset:2px}
+.seg{display:inline-flex; flex-wrap:wrap; background:var(--sunk); border-radius:8px; padding:3px; gap:2px}
+.seg button{border:0; background:none; color:var(--muted); font:600 .85rem var(--body); padding:5px 11px; border-radius:6px; cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--surface); color:var(--ink); box-shadow:0 1px 2px rgba(0,0,0,.12)}
+main{padding-block:22px 72px}
+.head{display:flex; justify-content:space-between; align-items:flex-end; gap:14px; flex-wrap:wrap; margin-bottom:16px}
+.eyebrow{font-family:var(--mono); font-size:.74rem; text-transform:uppercase; letter-spacing:.08em; color:var(--oxide)}
+h2{font-family:var(--display); font-stretch:115%; font-weight:800; font-size:clamp(1.5rem,4vw,2.2rem); line-height:1.12; margin:2px 0 0; text-wrap:balance}
+.sub{color:var(--muted)}
+h3.sec{font-family:var(--display); font-weight:700; font-size:.82rem; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); margin:26px 0 10px; display:flex; gap:10px; align-items:baseline; flex-wrap:wrap}
+h3.sec .ar{text-transform:none; letter-spacing:0; font-family:var(--body)}
+.only-en .ar, .only-en .ar-inline{display:none!important} .only-ar .en{display:none!important}
+.ar, .ar-block{direction:rtl; text-align:right}
+code{font-family:var(--mono); font-size:.86em; background:var(--sunk); padding:1px 5px; border-radius:4px; direction:ltr; unicode-bidi:isolate}
+pre.code{background:var(--code-bg); color:var(--code-fg); font-family:var(--mono); font-size:.84rem; line-height:1.55; padding:12px 14px; border-radius:8px; overflow-x:auto; margin:0; direction:ltr; text-align:left}
+pre.code code{background:none; padding:0; font-size:inherit; white-space:pre; color:inherit}
+.tk-k{color:var(--k)} .tk-s{color:var(--s)} .tk-c{color:var(--c); font-style:italic} .tk-n{color:var(--n)} .tk-m{color:var(--m)}
+.card{background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:18px}
+.btn{font:600 .92rem var(--body); border:1px solid var(--line); background:var(--surface); color:var(--ink); padding:8px 16px; border-radius:8px; cursor:pointer}
+.btn:hover{border-color:var(--muted)} .btn.primary{background:var(--oxide); border-color:var(--oxide); color:#fff} .btn.small{padding:5px 11px; font-size:.84rem}
+.btn:disabled{opacity:.45; cursor:not-allowed}
+.actions{display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-top:12px}
+.chip{font-family:var(--mono); font-size:.7rem; font-weight:600; text-transform:uppercase; letter-spacing:.06em; padding:2px 7px; border-radius:4px; background:var(--sunk); color:var(--muted); white-space:nowrap}
+.chip.ok{background:var(--patina-soft); color:var(--patina)} .chip.warn{background:var(--oxide-soft); color:var(--oxide)}
+.chips{display:flex; gap:6px; flex-wrap:wrap}
+/* Skills index */
+.grp{margin-bottom:22px}
+.grp-h{font-family:var(--display); font-weight:800; font-stretch:110%; font-size:1.05rem; margin:0 0 8px; display:flex; gap:10px; align-items:baseline}
+.grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:10px}
+.tile{display:flex; flex-direction:column; gap:6px; text-align:left; font:inherit; color:var(--ink); background:var(--surface); border:1px solid var(--line); border-radius:10px; padding:12px 14px; cursor:pointer; min-width:0}
+.tile:hover{border-color:var(--oxide)}
+.tile b{font-family:var(--display); font-weight:700; font-size:1rem; line-height:1.3}
+.tile .ar{color:var(--muted); font-size:.92rem}
+.meter{height:4px; background:var(--sunk); border-radius:2px; overflow:hidden}
+.meter i{display:block; height:100%; background:var(--patina)}
+/* Skill page */
+.pairs{display:grid; gap:6px}
+.pair{display:grid; grid-template-columns:1fr 1fr; gap:4px 22px; padding:7px 0; border-top:1px dashed var(--line)}
+.pair:first-child{border-top:0}
+.pair > div{min-width:0}
+.only-en .pair, .only-ar .pair{grid-template-columns:1fr}
+.tbl-wrap{overflow-x:auto; margin-top:12px}
+table{border-collapse:collapse; width:100%; font-size:.9rem; min-width:520px}
+th,td{text-align:left; padding:7px 10px; border-bottom:1px solid var(--line); vertical-align:top}
+th{font-family:var(--display); font-size:.74rem; text-transform:uppercase; letter-spacing:.06em; color:var(--muted)}
+td.ar{text-align:right}
+.mist{display:grid; gap:10px}
+.mcard{background:var(--surface); border:1px solid var(--line); border-radius:10px; overflow:hidden}
+.mcard .row{display:grid; grid-template-columns:1fr 1fr; gap:0}
+.mcard .side{padding:10px 12px; min-width:0}
+.mcard .side + .side{border-left:1px solid var(--line)}
+.mcard .lbl{font-family:var(--mono); font-size:.7rem; font-weight:600; letter-spacing:.06em; text-transform:uppercase; margin-bottom:6px; display:block}
+.mcard .bad .lbl{color:var(--bad)} .mcard .good .lbl{color:var(--patina)}
+.mcard pre.code{font-size:.8rem; padding:9px 11px}
+.mcard .why{padding:9px 12px; background:var(--sunk); font-size:.92rem; display:grid; gap:2px}
+.errname{font-family:var(--mono); font-size:.82rem; color:var(--bad); font-weight:600}
+.pager{display:flex; justify-content:space-between; gap:10px; margin-top:28px; flex-wrap:wrap}
+/* Practice */
+.items{display:grid; gap:12px}
+.item{background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:16px}
+.item.done-ok{border-color:var(--patina)}
+.item .q{font-weight:500; margin:6px 0 2px}
+.item .qa{color:var(--muted); margin:0 0 10px}
+textarea.code-in{width:100%; min-height:90px; font-family:var(--mono); font-size:.86rem; line-height:1.55; color:var(--code-fg); background:var(--code-bg); border:1.5px solid transparent; border-radius:8px; padding:10px 12px; resize:vertical; tab-size:4; direction:ltr}
+textarea.code-in:focus{outline:none; border-color:var(--oxide)}
+input.blank{font-family:var(--mono); font-size:.84rem; min-width:5ch; padding:1px 6px; background:#2A2F35; color:#fff; border:1px solid #5A626B; border-radius:4px}
+input.blank.right{border-color:#5DB8AB; background:rgba(93,184,171,.25)} input.blank.wrong{border-color:#F2796B; background:rgba(242,121,107,.25)}
+.opts{display:grid; gap:8px}
+.opt{text-align:left; font:inherit; border:1.5px solid var(--line); background:var(--surface); color:var(--ink); padding:9px 12px; border-radius:8px; cursor:pointer}
+.opt:hover:not(:disabled){border-color:var(--oxide)}
+.opt.right{border-color:var(--patina); background:var(--patina-soft)} .opt.wrong{border-color:var(--bad); background:var(--bad-soft)}
+.opt:disabled{cursor:default}
+.fb{margin-top:12px; border-radius:8px; padding:11px 13px; background:var(--sunk); display:grid; gap:6px}
+.fb.ok{background:var(--patina-soft)} .fb.no{background:var(--bad-soft)}
+.fb .v{font-family:var(--display); font-weight:800}
+.fb.ok .v{color:var(--patina)} .fb.no .v{color:var(--bad)}
+/* Parsons */
+.parsons{display:grid; grid-template-columns:1fr 1fr; gap:12px}
+.pane{min-width:0}
+.pane-h{font-family:var(--display); font-size:.74rem; font-weight:700; text-transform:uppercase; letter-spacing:.07em; color:var(--muted); margin-bottom:6px}
+.plist{background:var(--code-bg); border-radius:8px; padding:6px; min-height:60px; display:flex; flex-direction:column; gap:3px; overflow-x:auto}
+.pline{display:block; width:100%; min-width:max-content; text-align:left; font-family:var(--mono); font-size:.8rem; line-height:1.45; color:var(--code-fg); background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.08); border-radius:5px; padding:4px 8px; cursor:pointer; white-space:pre}
+.pline:hover{border-color:#E5814F}
+.pline.right{border-color:#5DB8AB; background:rgba(93,184,171,.2)} .pline.wrong{border-color:#F2796B; background:rgba(242,121,107,.2)}
+.empty{color:#7D8790; font-size:.8rem; padding:8px; font-family:var(--body)}
+@media (max-width:700px){ .parsons{grid-template-columns:1fr} .pair{grid-template-columns:1fr} .mcard .row{grid-template-columns:1fr} .mcard .side + .side{border-left:0; border-top:1px solid var(--line)} }
+/* Programs */
+.lvl-h{display:flex; gap:10px; align-items:baseline; margin:20px 0 8px}
+.lvl-h b{font-family:var(--display); font-weight:800; font-stretch:110%}
+.prog-list{display:grid; gap:8px}
+.prog{display:grid; grid-template-columns:minmax(0,1fr) auto; gap:12px; align-items:center; text-align:left; font:inherit; color:var(--ink); background:var(--surface); border:1px solid var(--line); border-radius:10px; padding:11px 14px; cursor:pointer}
+.prog:hover{border-color:var(--oxide)}
+.prog b{font-family:var(--display); font-weight:700}
+.prog .ar{color:var(--muted); font-size:.92rem}
+.task{font-size:1.04rem}
+.io{display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:12px}
+.io > div{min-width:0}
+@media (max-width:700px){ .io{grid-template-columns:1fr} }
+details.help{background:var(--surface); border:1px solid var(--oxide); border-radius:12px; margin-top:14px}
+details.help > summary{cursor:pointer; padding:12px 16px; font-family:var(--display); font-weight:800; color:var(--oxide); list-style:none; display:flex; gap:10px; align-items:baseline}
+details.help > summary::-webkit-details-marker{display:none}
+details.help > summary::before{content:"+"; font-family:var(--mono)}
+details.help[open] > summary::before{content:"−"}
+.help-body{padding:0 16px 16px; display:grid; gap:16px}
+.hint-list{margin:0; padding-left:1.4em; display:grid; gap:6px}
+.hint-list li{padding-left:4px}
+.formbox summary{cursor:pointer; font-weight:600; padding:4px 0}
+.steps{counter-reset:s; list-style:none; padding:0; margin:0; display:grid; gap:10px}
+.steps li{counter-increment:s; background:var(--surface); border:1px solid var(--line); border-radius:10px; padding:12px 14px 12px 52px; position:relative}
+.steps li::before{content:counter(s); position:absolute; left:14px; top:12px; width:26px; height:26px; border-radius:50%; background:var(--oxide); color:#fff; font-family:var(--mono); font-weight:600; font-size:.85rem; display:grid; place-items:center}
+input.search{font:inherit; width:100%; max-width:420px; padding:8px 12px; border:1.5px solid var(--line); border-radius:8px; background:var(--surface); color:var(--ink)}
+@media (prefers-reduced-motion: reduce){ *{transition:none!important} }
+</style>
+
+<header class="top"><div class="wrap">
+  <div class="brand"><h1>Rust <b>Writing</b> Trainer</h1>
+    <div class="seg" role="group" aria-label="Language"><button data-lang="both">EN+ع</button><button data-lang="en">EN</button><button data-lang="ar">ع</button></div></div>
+  <nav class="tabs" role="tablist" id="tabs"></nav>
+</div></header>
+<main class="wrap" id="main"></main>
+
+<script>
+/* Writing skills. Practice item types:
+   write: type code; checked by whitespace-free compare against `accept` or regex `re`.
+   fix:   edit `start` code; same checking.
+   fill:  blanks ___ in `code`.
+   order: tap lines into the right order (`lines` is the correct order).
+   mcq:   pick the right form.
+   `test` = harness used only to compile-check the answer ({{A}} is replaced). */
+const SKILLS = [
+/* ========================= CH 1–2 ========================= */
+{ id:"print", ch:"Ch 1–2", t:"Program skeleton & printing", ar:"هيكل البرنامج والطباعة",
+  form:`fn main() {
+    println!("text");                 // print + new line
+    println!("x = {}", x);            // {} filled in order
+    println!("x = {x}");              // variable name inside {}
+    println!("sum = {}", a + b);      // expressions need empty {}
+    print!("no new line ");
+    println!();                       // just a new line
+}`,
+  points:[
+   ["Every program starts at `fn main() { }`.","كل برنامج يبدأ من `fn main() { }`."],
+   ["`println!` has `!` because it is a macro. Each statement ends with `;`.","`println!` فيها `!` لأنها ماكرو، وكل جملة تنتهي بـ `;`."],
+   ["Only a plain variable name can go inside `{}`. For `a + b` use `{}` and put the expression after the comma.","داخل `{}` تقدر تكتب اسم متغير بس. أما `a + b` فتكتب `{}` وتحط التعبير بعد الفاصلة."]
+  ],
+  pitfalls:[
+   { bad:`println!("{} {}", x);`, err:"2 positional arguments in format string, but there is 1 argument", fix:`println!("{} {}", x, y);`, en:"Count the `{}`: each one needs an argument.", ar:"عدّ الأقواس `{}`، كل واحد يحتاج قيمة." },
+   { bad:`println!("{x + 1}");`, err:"invalid format string", fix:`println!("{}", x + 1);`, en:"Expressions can't go inside the braces.", ar:"التعابير ما تنكتب داخل الأقواس." },
+   { bad:`println("hi");`, err:"expected function, found macro `println`", fix:`println!("hi");`, en:"Don't forget the `!`.", ar:"لا تنسى علامة `!`." }
+  ],
+  practice:[
+   { type:"write", q:"`a` and `b` already exist (7 and 8). Write ONE line that prints `Total: 15` using `{}` and the expression `a + b`.", qa:"اكتب سطر واحد يطبع `Total: 15` باستخدام `{}` والتعبير `a + b`.",
+     accept:[`println!("Total: {}", a + b);`], test:`fn main() { let a = 7; let b = 8; {{A}} }`,
+     en:"The expression goes after the comma.", ar:"التعبير يجي بعد الفاصلة." },
+   { type:"write", q:"`name` holds \"Sara\". Print `Hi Sara` by putting the variable name inside the braces.", qa:"اطبع `Hi Sara` بكتابة اسم المتغير داخل الأقواس.",
+     accept:[`println!("Hi {name}");`, `println!("Hi {}", name);`], test:`fn main() { let name = "Sara"; {{A}} }`,
+     en:"`{name}` prints the variable directly.", ar:"`{name}` تطبع المتغير مباشرة." },
+   { type:"order", q:"Put the lines in order to make a complete program.", qa:"رتّب الأسطر عشان يصير برنامج كامل.",
+     lines:[`fn main() {`, `    let lang = "Rust";`, `    println!("Hello, {lang}!");`, `}`],
+     en:"Declare before you use.", ar:"عرّف المتغير قبل ما تستخدمه." },
+   { type:"mcq", q:"Which code prints `1 2` on ONE line?", qa:"أي كود يطبع `1 2` في سطر واحد؟",
+     options:[`print!("1 "); println!("2");`, `println!("1 "); println!("2");`, `println!("1", "2");`, `print("1 2");`], answer:0,
+     en:"`print!` doesn't add a new line; `println!` does.", ar:"`print!` ما تضيف سطر جديد، و `println!` تضيف." }
+  ]},
+{ id:"vars", ch:"Ch 1–3", t:"Variables, mut, shadowing, const", ar:"المتغيرات و mut و shadowing و const",
+  form:`let name = value;              // immutable
+let mut name = value;          // can change later
+let name: Type = value;        // with a type annotation
+let name = name + 1;           // shadowing: a NEW variable, type may change
+const NAME: Type = value;      // constant: type required, UPPER_CASE, never mut`,
+  points:[
+   ["Will it change later? → `let mut`. Changing type? → shadow with `let`.","بيتغير بعدين؟ ← `let mut`. بيتغير نوعه؟ ← shadow بـ `let`."],
+   ["`x += 1` means `x = x + 1` (needs `mut`).","`x += 1` تعني `x = x + 1` وتحتاج `mut`."]
+  ],
+  pitfalls:[
+   { bad:`let x = 5;\nx = 6;`, err:"cannot assign twice to immutable variable `x`", fix:`let mut x = 5;\nx = 6;`, en:"Add `mut` when you assign again.", ar:"ضيف `mut` إذا بتعطيه قيمة ثانية." },
+   { bad:`const MAX = 10;`, err:"missing type for `const` item", fix:`const MAX: u32 = 10;`, en:"Constants always need a type.", ar:"الثابت لازم له نوع." },
+   { bad:`let mut s = "abc";\ns = s.len();`, err:"mismatched types", fix:`let s = "abc";\nlet s = s.len();`, en:"`mut` can't change the type. Shadow instead.", ar:"`mut` ما يغيّر النوع، استخدم shadowing." }
+  ],
+  practice:[
+   { type:"write", q:"Declare a mutable variable `count` starting at 0, then add 1 to it (two lines).", qa:"عرّف متغير `count` قابل للتعديل يبدأ من 0، وبعدين زِد عليه 1.",
+     re:[`letmutcount(:i32|:u32)?=0;count(\\+=1|=count\\+1);`], accept:[`let mut count = 0;\ncount += 1;`], test:`fn main() { {{A}} println!("{count}"); }`,
+     en:"`let mut` then `+= 1`.", ar:"`let mut` وبعدين `+= 1`." },
+   { type:"write", q:"Declare a constant `MAX_SCORE` of type `u32` with value 100.", qa:"عرّف ثابت `MAX_SCORE` نوعه `u32` وقيمته 100.",
+     accept:[`const MAX_SCORE: u32 = 100;`], test:`{{A}}\nfn main() { println!("{MAX_SCORE}"); }`,
+     en:"`const`, name, colon, type, value.", ar:"`const` ثم الاسم ثم النوع ثم القيمة." },
+   { type:"fix", q:"Fix the code so it compiles and prints 15.", qa:"صحّح الكود عشان يترجم ويطبع 15.",
+     start:`let total = 10;\ntotal = total + 5;\nprintln!("{total}");`,
+     accept:[`let mut total = 10;\ntotal = total + 5;\nprintln!("{total}");`, `let total = 10;\nlet total = total + 5;\nprintln!("{total}");`], test:`fn main() { {{A}} }`,
+     en:"Either `let mut total` or shadow with `let total = total + 5;`.", ar:"إما `let mut` أو shadow بـ `let`." },
+   { type:"write", q:"`input` is the &str \"42\". Shadow it into a `u32` also called `input`, using `parse` and `expect`.", qa:"سوّ shadow لـ `input` وحوّله إلى `u32` بـ parse و expect.",
+     re:[`letinput:u32=input(\\.trim\\(\\))?\\.parse\\(\\)\\.expect\\(".*"\\);`], accept:[`let input: u32 = input.trim().parse().expect("Not a number");`], test:`fn main() { let input = "42"; {{A}} println!("{}", input + 1); }`,
+     en:"The type annotation `: u32` tells parse what to produce.", ar:"`: u32` تحدد لـ parse النوع المطلوب." }
+  ]},
+{ id:"input", ch:"Ch 2", t:"Reading user input", ar:"قراءة مدخلات المستخدم",
+  form:`use std::io;                                   // at the top of the file
+
+let mut input = String::new();                 // must be mut
+io::stdin()
+    .read_line(&mut input)                     // &mut, appends to input
+    .expect("Failed to read line");
+let n: u32 = input.trim().parse().expect("Not a number");   // crash on bad input
+
+// inside a loop, skip bad input instead of crashing:
+let n: u32 = match input.trim().parse() {
+    Ok(num) => num,
+    Err(_) => continue,
+};`,
+  points:[
+   ["Make a NEW `String::new()` for every read (read_line appends; it doesn't replace).","سوّ `String::new()` جديد لكل قراءة لأن read_line تضيف وما تستبدل."],
+   ["Always `trim()` before `parse()`, and give the variable a type.","دايماً `trim()` قبل `parse()`، وحدد نوع المتغير."]
+  ],
+  pitfalls:[
+   { bad:`io::stdin().read_line(input)`, err:"mismatched types (expected `&mut String`, found `String`)", fix:`io::stdin().read_line(&mut input)`, en:"read_line needs `&mut`.", ar:"read_line تحتاج `&mut`." },
+   { bad:`let input = String::new();`, err:"cannot borrow `input` as mutable, as it is not declared as mutable", fix:`let mut input = String::new();`, en:"The String must be `mut`.", ar:"النص لازم يكون `mut`." },
+   { bad:`let n = input.trim().parse().expect("..");`, err:"type annotations needed", fix:`let n: u32 = input.trim().parse().expect("..");`, en:"parse needs to know the target type.", ar:"parse تحتاج تعرف النوع." },
+   { bad:`let n: u32 = input.parse().expect("bad");`, err:"no compile error, but it panics: invalid digit found in string", fix:`let n: u32 = input.trim().parse().expect("bad");`, en:"Without trim the `\\n` from Enter stays in the text.", ar:"بدون trim يبقى `\\n` في النص فيفشل التحويل." }
+  ],
+  practice:[
+   { type:"order", q:"Order the lines: read a number and print its double.", qa:"رتّب الأسطر: اقرأ رقم واطبع ضعفه.",
+     lines:[`use std::io;`, `fn main() {`, `    let mut input = String::new();`, `    io::stdin().read_line(&mut input).expect("Failed");`, `    let n: i32 = input.trim().parse().expect("Not a number");`, `    println!("{}", n * 2);`, `}`],
+     en:"use → String::new → read_line → parse → print.", ar:"use ثم String::new ثم read_line ثم parse ثم الطباعة." },
+   { type:"fill", q:"Fill in the blanks so bad input is skipped inside the loop.", qa:"أكمل الفراغات عشان الإدخال الغلط يتنخطى داخل الحلقة.",
+     code:`let n: u32 = match input.___().parse() {
+    ___(num) => num,
+    Err(___) => continue,
+};`, blanks:["trim","Ok","_"], test:`fn main() { for input in ["5", "x"] { {{A}} println!("{n}"); } }`,
+     en:"trim, then `Ok(num)` and the catch-all `Err(_)`.", ar:"trim ثم `Ok(num)` و `Err(_)`." },
+   { type:"write", q:"`let mut input = String::new();` exists and `use std::io;` is at the top. Write the statement that reads a line into `input` with `expect(\"Failed\")`.", qa:"اكتب الجملة اللي تقرأ سطر في `input` مع expect.",
+     re:[`(std::)?io::stdin\\(\\)\\.read_line\\(&mutinput\\)\\.expect\\(".*"\\);`], accept:[`io::stdin().read_line(&mut input).expect("Failed");`], test:`use std::io;\nfn main() { let mut input = String::new(); {{A}} }`,
+     en:"stdin() → read_line(&mut input) → expect.", ar:"stdin ثم read_line(&mut input) ثم expect." }
+  ]},
+/* ========================= CH 3 ========================= */
+{ id:"tuple", ch:"Ch 3", t:"Tuples: create, access, send, return", ar:"الـ Tuple: إنشاء ووصول وإرسال وإرجاع",
+  form:`let t: (i32, f64, char) = (500, 6.4, 'a');   // create (type optional)
+let (x, y, z) = t;                            // destructure
+let first = t.0;                              // access by index (from 0)
+
+fn show(p: (i32, i32)) {                      // send a tuple to a function
+    println!("{} {}", p.0, p.1);
+}
+show((1, 2));                                 // note the double ( )
+
+fn min_max(a: i32, b: i32) -> (i32, i32) {    // return a tuple
+    if a < b { (a, b) } else { (b, a) }
+}
+let (lo, hi) = min_max(9, 3);`,
+  points:[
+   ["Use a tuple to group a few values of different types, or to return 2+ values from a function.","استخدم tuple لتجميع قيم من أنواع مختلفة، أو لإرجاع أكثر من قيمة من دالة."],
+   ["Access with a dot: `t.0`, never `t[0]`.","الوصول بالنقطة `t.0` مو `t[0]`."]
+  ],
+  pitfalls:[
+   { bad:`let a = t[0];`, err:"cannot index into a value of type `(i32, f64, char)`", fix:`let a = t.0;`, en:"Tuples use `.index`.", ar:"الـ tuple يستخدم النقطة." },
+   { bad:`let b = t.3;   // t has 3 elements`, err:"no field `3` on type", fix:`let b = t.2;`, en:"Indexes start at 0.", ar:"الترقيم يبدأ من 0." },
+   { bad:`show(1, 2);   // fn show(p: (i32, i32))`, err:"this function takes 1 argument but 2 arguments were supplied", fix:`show((1, 2));`, en:"A tuple is ONE argument: wrap it in its own parentheses.", ar:"الـ tuple argument واحد، فلازم أقواس إضافية." }
+  ],
+  practice:[
+   { type:"write", q:"Create a tuple `p` holding the integer 3 and the float 4.5, with its type written as `(i32, f64)`.", qa:"أنشئ tuple اسمه `p` فيه 3 و 4.5 مع كتابة النوع.",
+     accept:[`let p: (i32, f64) = (3, 4.5);`], test:`fn main() { {{A}} println!("{:?}", p); }`, en:"`let name: (types) = (values);`", ar:"`let name: (types) = (values);`" },
+   { type:"write", q:"Destructure `p` into two variables `x` and `y`.", qa:"فكّك `p` إلى `x` و `y`.",
+     accept:[`let (x, y) = p;`], test:`fn main() { let p = (3, 4.5); {{A}} println!("{x} {y}"); }`, en:"A pattern on the left side of `let`.", ar:"نمط على يسار `let`." },
+   { type:"write", q:"Write `fn swap(pair: (i32, i32)) -> (i32, i32)` that returns the two values swapped.", qa:"اكتب دالة `swap` ترجع القيمتين بعد التبديل.",
+     accept:[`fn swap(pair: (i32, i32)) -> (i32, i32) {\n    (pair.1, pair.0)\n}`, `fn swap(pair: (i32, i32)) -> (i32, i32) {\n    let (a, b) = pair;\n    (b, a)\n}`],
+     test:`{{A}}\nfn main() { println!("{:?}", swap((1, 2))); }`, en:"Return a new tuple as the last expression.", ar:"ارجع tuple جديد كآخر تعبير." },
+   { type:"mcq", q:"`fn show(p: (i32, i32))`. Which call is correct?", qa:"أي استدعاء صحيح؟",
+     options:[`show((1, 2));`, `show(1, 2);`, `show[1, 2];`, `show(p: (1, 2));`], answer:0, en:"Inner parentheses build the tuple.", ar:"الأقواس الداخلية تكوّن الـ tuple." }
+  ]},
+{ id:"array", ch:"Ch 3", t:"Arrays: create, index, loop, send", ar:"المصفوفات: إنشاء وفهرسة وتكرار وإرسال",
+  form:`let a = [1, 2, 3, 4, 5];            // create
+let b: [i32; 5] = [0; 5];           // type [T; N]; five zeros
+let mut c = [10, 20, 30];           // mut to change elements
+c[1] = 25;
+let first = a[0];                   // index from 0
+let n = a.len();                    // length
+
+for x in a { }                      // each value
+for i in 0..a.len() { a[i]; }       // each index
+
+fn sum(arr: [i32; 5]) -> i32 { }    // fixed size only
+fn sum(arr: &[i32]) -> i32 { }      // any size (slice, Ch 4) → sum(&a)`,
+  points:[
+   ["All elements have the same type; the length never changes.","كل العناصر نفس النوع والطول ثابت."],
+   ["To change an element, the whole array must be `mut`.","عشان تغيّر عنصر لازم المصفوفة كلها `mut`."]
+  ],
+  pitfalls:[
+   { bad:`let a = [1, 2, "3"];`, err:"mismatched types", fix:`let a = [1, 2, 3];`, en:"One type only.", ar:"نوع واحد بس." },
+   { bad:`let a = [1, 2, 3];\na[0] = 9;`, err:"cannot assign to `a[_]`, as `a` is not declared as mutable", fix:`let mut a = [1, 2, 3];\na[0] = 9;`, en:"Make it `mut`.", ar:"خلّها `mut`." },
+   { bad:`let x = a[3];   // a has 3 elements`, err:"this operation will panic at runtime (index out of bounds)", fix:`let x = a[2];`, en:"Last index is len − 1.", ar:"آخر index هو الطول − 1." },
+   { bad:`for i in 0..=a.len() { a[i]; }`, err:"panic: index out of bounds (off by one)", fix:`for i in 0..a.len() { a[i]; }`, en:"Use `..` (end excluded) with len().", ar:"استخدم `..` مع len()." }
+  ],
+  practice:[
+   { type:"write", q:"Create an array `zeros` of four `i32` zeros using the repeat form `[value; count]`, with its type written.", qa:"أنشئ مصفوفة 4 أصفار بصيغة التكرار مع كتابة النوع.",
+     accept:[`let zeros: [i32; 4] = [0; 4];`], test:`fn main() { {{A}} println!("{:?}", zeros); }`, en:"Type `[i32; 4]`, value `[0; 4]`.", ar:"النوع `[i32; 4]` والقيمة `[0; 4]`." },
+   { type:"write", q:"`let mut total = 0;` exists. Write a `for` loop that adds every element of array `a` to `total`.", qa:"اكتب حلقة for تجمع عناصر `a` في `total`.",
+     re:[`for(\\w+)ina\\{total(\\+=|=total\\+)\\1;?\\}`], accept:[`for x in a {\n    total += x;\n}`], test:`fn main() { let a = [1, 2, 3]; let mut total = 0; {{A}} println!("{total}"); }`, en:"`for x in a { total += x; }`", ar:"`for x in a { total += x; }`" },
+   { type:"fix", q:"Fix the code so it changes the second element to 25.", qa:"صحّح الكود عشان يغير العنصر الثاني إلى 25.",
+     start:`let a = [10, 20, 30];\na[1] = 25;\nprintln!("{}", a[1]);`, accept:[`let mut a = [10, 20, 30];\na[1] = 25;\nprintln!("{}", a[1]);`], test:`fn main() { {{A}} }`,
+     en:"The array must be `mut`.", ar:"المصفوفة لازم `mut`." },
+   { type:"order", q:"Order the lines of a function that returns the largest value.", qa:"رتّب أسطر دالة ترجع أكبر قيمة.",
+     lines:[`fn largest(arr: [i32; 4]) -> i32 {`, `    let mut max = arr[0];`, `    for x in arr {`, `        if x > max {`, `            max = x;`, `        }`, `    }`, `    max`, `}`], test:`{{A}}\nfn main() { println!("{}", largest([3, 9, 2, 7])); }`,
+     en:"Start from the first element; return `max` with no `;`.", ar:"ابدأ من أول عنصر، وارجع `max` بدون `;`." }
+  ]},
+{ id:"fn", ch:"Ch 3", t:"Functions: write, call, return", ar:"الدوال: كتابة واستدعاء وإرجاع",
+  form:`fn name(param: Type, other: Type) -> ReturnType {
+    let temp = param * 2;      // statements end with ;
+    temp + other               // last expression, NO ; → returned
+}
+
+fn greet(name: &str) {         // no -> means it returns nothing
+    println!("Hi {name}");
+}
+
+fn check(n: i32) -> i32 {
+    if n < 0 {
+        return 0;              // early return uses return + ;
+    }
+    n
+}
+
+let r = name(3, 4);            // call: arguments in order`,
+  points:[
+   ["Write the signature first: name, every parameter with its type, and `-> type` if it returns something.","اكتب السطر الأول أول: الاسم، وكل parameter مع نوعه، و `-> type` إذا ترجع شي."],
+   ["The last line without `;` is the return value.","آخر سطر بدون `;` هو القيمة المرجعة."]
+  ],
+  pitfalls:[
+   { bad:`fn double(x) -> i32 { x * 2 }`, err:"expected one of `:`, `@`, or `|` (missing parameter type)", fix:`fn double(x: i32) -> i32 { x * 2 }`, en:"Every parameter needs a type.", ar:"كل parameter يحتاج نوع." },
+   { bad:`fn double(x: i32) -> i32 { x * 2; }`, err:"mismatched types (expected `i32`, found `()`)", fix:`fn double(x: i32) -> i32 { x * 2 }`, en:"Remove the `;` from the returned value.", ar:"شيل `;` من القيمة المرجعة." },
+   { bad:`fn five() { 5 }`, err:"mismatched types (expected `()`, found integer)", fix:`fn five() -> i32 { 5 }`, en:"Add the return type.", ar:"ضيف نوع الإرجاع." },
+   { bad:`area(3);   // fn area(w: u32, h: u32)`, err:"this function takes 2 arguments but 1 argument was supplied", fix:`area(3, 4);`, en:"Give every argument.", ar:"أعطه كل القيم." }
+  ],
+  practice:[
+   { type:"write", q:"Write `fn square(n: i32) -> i32` that returns n times n.", qa:"اكتب دالة ترجع مربع الرقم.",
+     accept:[`fn square(n: i32) -> i32 {\n    n * n\n}`, `fn square(n: i32) -> i32 {\n    return n * n;\n}`], test:`{{A}}\nfn main() { println!("{}", square(4)); }`, en:"Last expression without `;`.", ar:"آخر تعبير بدون `;`." },
+   { type:"fix", q:"Fix the function so it compiles.", qa:"صحّح الدالة.",
+     start:`fn double(x: i32) -> i32 {\n    x * 2;\n}`, accept:[`fn double(x: i32) -> i32 {\n    x * 2\n}`], test:`{{A}}\nfn main() { println!("{}", double(4)); }`, en:"The `;` made it a statement.", ar:"الـ `;` حولته لـ statement." },
+   { type:"write", q:"`fn area(w: u32, h: u32) -> u32` exists. Call it with 3 and 4 and store the result in `a`.", qa:"استدعِ area بـ 3 و 4 وخزّن الناتج في `a`.",
+     re:[`leta(:u32)?=area\\(3,4\\);`], accept:[`let a = area(3, 4);`], test:`fn area(w: u32, h: u32) -> u32 { w * h }\nfn main() { {{A}} println!("{a}"); }`, en:"`let a = area(3, 4);`", ar:"`let a = area(3, 4);`" },
+   { type:"mcq", q:"Which function correctly returns the bigger of two numbers?", qa:"أي دالة ترجع الأكبر بشكل صحيح؟",
+     options:[`fn max(a: i32, b: i32) -> i32 { if a > b { a } else { b } }`, `fn max(a: i32, b: i32) -> i32 { if a > b { a; } else { b; } }`, `fn max(a, b) -> i32 { if a > b { a } else { b } }`, `fn max(a: i32, b: i32) { if a > b { a } else { b } }`], answer:0,
+     en:"No `;` inside the arms, typed parameters, and `-> i32`.", ar:"بدون `;` داخل الفروع، مع أنواع الـ parameters و `-> i32`." }
+  ]},
+{ id:"if", ch:"Ch 3", t:"if / else if / if in let", ar:"if و else if و if داخل let",
+  form:`if n > 0 {                    // condition must be a bool
+    println!("positive");
+} else if n < 0 {             // only the FIRST true branch runs
+    println!("negative");
+} else {
+    println!("zero");
+}
+
+let sign = if n < 0 { "neg" } else { "pos" };   // same type in both; ; at the end
+
+let both = a > 0 && b > 0;    // and
+let any = a > 0 || b > 0;     // or
+let not_zero = n != 0;`,
+  points:[
+   ["Put the most specific condition first (e.g. check 15 before 3 and 5 in FizzBuzz).","حط الشرط الأدق أول (مثلاً 15 قبل 3 و 5)."],
+   ["Rust doesn't turn numbers into bool: write `n != 0`.","Rust ما يحول الأرقام لـ bool، اكتب `n != 0`."]
+  ],
+  pitfalls:[
+   { bad:`if count { }`, err:"mismatched types (expected `bool`, found integer)", fix:`if count != 0 { }`, en:"Compare to make a bool.", ar:"قارن عشان يطلع bool." },
+   { bad:`let v = if ok { 1 } else { "one" };`, err:"`if` and `else` have incompatible types", fix:`let v = if ok { 1 } else { 0 };`, en:"Both arms must have one type.", ar:"الفرعين نفس النوع." },
+   { bad:`fn f(x: i32) -> i32 { if x > 0 { x } }`, err:"`if` may be missing an `else` clause", fix:`fn f(x: i32) -> i32 { if x > 0 { x } else { 0 } }`, en:"Every path must give a value.", ar:"كل الحالات لازم ترجع قيمة." }
+  ],
+  practice:[
+   { type:"write", q:"Store in `sign` the text \"neg\" if `n < 0`, otherwise \"pos\", in one `let` line.", qa:"خزّن في `sign` النص \"neg\" إذا n سالب وإلا \"pos\" بسطر let واحد.",
+     accept:[`let sign = if n < 0 { "neg" } else { "pos" };`], test:`fn main() { let n = -2; {{A}} println!("{sign}"); }`, en:"if is an expression; end with `;`.", ar:"if تعبير، وفي الآخر `;`." },
+   { type:"order", q:"Order the lines of a grade function (90+ → A, 80+ → B, else C).", qa:"رتّب دالة الدرجات.",
+     lines:[`fn grade(score: u32) -> char {`, `    if score >= 90 {`, `        'A'`, `    } else if score >= 80 {`, `        'B'`, `    } else {`, `        'C'`, `    }`, `}`], test:`{{A}}\nfn main() { println!("{}", grade(85)); }`,
+     en:"Highest limit first.", ar:"الحد الأعلى أول." },
+   { type:"fix", q:"Fix the condition.", qa:"صحّح الشرط.",
+     start:`let count = 3;\nif count {\n    println!("not zero");\n}`, accept:[`let count = 3;\nif count != 0 {\n    println!("not zero");\n}`, `let count = 3;\nif count > 0 {\n    println!("not zero");\n}`], test:`fn main() { {{A}} }`, en:"Make it a bool.", ar:"خلّه bool." }
+  ]},
+{ id:"loop", ch:"Ch 3", t:"Loops: loop, while, for, labels", ar:"الحلقات: loop و while و for و labels",
+  form:`loop {                          // forever, until break
+    if done { break; }
+}
+let r = loop {                  // loop can give a value
+    c += 1;
+    if c == 10 { break c * 2; }
+};
+while n > 0 {                   // while the condition is true
+    n -= 1;                     // don't forget to change it!
+}
+for x in arr { }                // each element
+for i in 1..=5 { }              // 1,2,3,4,5   (1..5 → 1 to 4)
+for i in (1..4).rev() { }       // 3,2,1
+'outer: for i in 0..3 {         // label starts with '
+    for j in 0..3 {
+        if j == 1 { continue 'outer; }
+        if i == 2 { break 'outer; }
+    }
+}`,
+  points:[
+   ["Which loop? Known collection or range → `for`. Unknown count with a condition → `while`. Repeat until something happens / need a value back → `loop`.","أي حلقة؟ مجموعة أو range ← `for`. شرط وعدد غير معروف ← `while`. لين يصير شي أو تبي ترجع قيمة ← `loop`."],
+   ["`break` leaves the loop; `continue` skips to the next round; `return` leaves the function.","`break` يطلع من الحلقة، `continue` ينتقل للدورة اللي بعدها، `return` يطلع من الدالة."]
+  ],
+  pitfalls:[
+   { bad:`let mut n = 3;\nwhile n > 0 {\n    println!("{n}");\n}`, err:"no error: an infinite loop at runtime", fix:`while n > 0 {\n    println!("{n}");\n    n -= 1;\n}`, en:"Change the variable in the condition.", ar:"غيّر المتغير اللي في الشرط." },
+   { bad:`let r = while x < 5 { break x; };`, err:"`break` with value from a `while` loop", fix:`let r = loop { if x >= 5 { break x; } x += 1; };`, en:"Only `loop` returns a value.", ar:"بس `loop` ترجع قيمة." },
+   { bad:`for i in 1..5 { }   // wanted 1 to 5`, err:"no error, but 5 is skipped", fix:`for i in 1..=5 { }`, en:"`..=` includes the end.", ar:"`..=` تشمل النهاية." }
+  ],
+  practice:[
+   { type:"write", q:"Write a `for` loop over `i` that prints the numbers 1 to 5 (including 5), one per line.", qa:"اكتب for تطبع 1 إلى 5.",
+     re:[`foriin(1\\.\\.=5|1\\.\\.6)\\{println!\\("(\\{i\\}|\\{\\}",i)"?\\);?\\}`], accept:[`for i in 1..=5 {\n    println!("{i}");\n}`], test:`fn main() { {{A}} }`, en:"`1..=5` includes 5.", ar:"`1..=5` تشمل 5." },
+   { type:"write", q:"`let mut n = 3;` exists. Write a `while` loop that prints n and decreases it until it reaches 0 (prints 3, 2, 1).", qa:"اكتب while تطبع n وتنقصه لين يوصل صفر.",
+     re:[`while(n>0|n!=0|n>=1)\\{println!\\("(\\{n\\}|\\{\\}",n)"?\\);n(-=1|=n-1);\\}`], accept:[`while n > 0 {\n    println!("{n}");\n    n -= 1;\n}`], test:`fn main() { let mut n = 3; {{A}} }`, en:"Print, then `n -= 1`.", ar:"اطبع وبعدين `n -= 1`." },
+   { type:"fill", q:"Fill in the blanks so `r` becomes 50.", qa:"أكمل الفراغات عشان تصير r = 50.",
+     code:`let mut c = 0;
+let r = ___ {
+    c += 1;
+    if c == 5 {
+        ___ c * 10;
+    }
+};`, blanks:["loop","break"], test:`fn main() { {{A}} println!("{r}"); }`, en:"`loop` + `break value`.", ar:"`loop` مع `break value`." },
+   { type:"order", q:"Order the lines: stop BOTH loops when i * j == 4.", qa:"رتّب الأسطر: أوقف الحلقتين لما i * j == 4.",
+     lines:[`'outer: for i in 1..4 {`, `    for j in 1..4 {`, `        if i * j == 4 {`, `            break 'outer;`, `        }`, `        println!("{i} {j}");`, `    }`, `}`], test:`fn main() { {{A}} }`,
+     en:"The label goes before the outer loop.", ar:"الـ label قبل الحلقة الخارجية." }
+  ]},
+/* ========================= CH 4 ========================= */
+{ id:"string", ch:"Ch 4", t:"String, move and clone", ar:"String والنقل والنسخ",
+  form:`let mut s = String::from("hi");   // owned text on the heap
+s.push_str(" there");             // append (needs mut)
+let n = s.len();
+let t = s.clone();                // deep copy: s still valid
+let u = s;                        // MOVE: s is no longer valid
+let w: &str = "literal";          // string literal = &str (fixed, not owned)
+
+let a = 5;
+let b = a;                        // i32 is Copy: a still valid`,
+  points:[
+   ["Need to change or own text → `String`. Just read text → `&str`.","تبي تعدل أو تملك النص ← `String`. بس تقرأ ← `&str`."],
+   ["After `let u = s;` use `u`, not `s`. Want both? `clone()`.","بعد `let u = s;` استخدم u مو s. تبي الاثنين؟ `clone()`."]
+  ],
+  pitfalls:[
+   { bad:`let a = String::from("x");\nlet b = a;\nprintln!("{a}");`, err:"borrow of moved value: `a`", fix:`let b = a.clone();`, en:"Clone, or use only b.", ar:"اعمل clone أو استخدم b بس." },
+   { bad:`let s = String::from("hi");\ns.push_str("!");`, err:"cannot borrow `s` as mutable, as it is not declared as mutable", fix:`let mut s = String::from("hi");`, en:"Add `mut`.", ar:"ضيف `mut`." },
+   { bad:`let s: String = "hi";`, err:"mismatched types (expected `String`, found `&str`)", fix:`let s: String = String::from("hi");`, en:"A literal is &str; convert with String::from.", ar:"النص الحرفي &str، حوّله بـ String::from." }
+  ],
+  practice:[
+   { type:"write", q:"Create a mutable String `msg` from \"Hello\" and then append \", Rust\" (two lines).", qa:"أنشئ String اسمه msg من \"Hello\" وضيف عليه \", Rust\".",
+     accept:[`let mut msg = String::from("Hello");\nmsg.push_str(", Rust");`], test:`fn main() { {{A}} println!("{msg}"); }`, en:"`String::from` + `push_str`.", ar:"`String::from` و `push_str`." },
+   { type:"fix", q:"Fix the code so both a and b can be printed.", qa:"صحّح الكود عشان تنطبع a و b.",
+     start:`let a = String::from("x");\nlet b = a;\nprintln!("{a} {b}");`, accept:[`let a = String::from("x");\nlet b = a.clone();\nprintln!("{a} {b}");`], test:`fn main() { {{A}} }`, en:"clone keeps a valid.", ar:"clone تخلي a صالح." },
+   { type:"mcq", q:"After which line is `s1` still valid?", qa:"بعد أي سطر يبقى s1 صالح؟",
+     options:[`let s2 = s1.clone();`, `let s2 = s1;`, `takes_ownership(s1);`, `let v = vec_of(s1);`], answer:0, en:"Only clone avoids the move.", ar:"بس clone ما ينقل." }
+  ]},
+{ id:"ref", ch:"Ch 4", t:"Sending values to functions: T, &T, &mut T", ar:"إرسال القيم للدوال: T و &T و &mut T",
+  form:`fn read_only(s: &String) -> usize { s.len() }   // borrow to read
+fn change(s: &mut String) { s.push_str("!"); }  // borrow to change
+fn take(s: String) { }                           // takes ownership
+
+let mut s = String::from("hi");
+let n = read_only(&s);   // send a reference
+change(&mut s);          // variable must be mut; send &mut
+take(s);                 // s is moved: can't use it after`,
+  table:[["Only read it","&T","f(&x)","بس تقرأ"],["Change it","&mut T","f(&mut x) and let mut x","تعدّل"],["Keep / consume it","T","f(x) → x moved (Copy types are copied)","تاخذ الملكية"]],
+  points:[
+   ["The `&` / `&mut` appears TWICE: in the parameter type and at the call.","الـ `&` أو `&mut` تنكتب مرتين: في نوع الـ parameter وعند الاستدعاء."],
+   ["At one time: ONE `&mut` or MANY `&`.","في نفس الوقت: `&mut` واحد أو `&` كثير."]
+  ],
+  pitfalls:[
+   { bad:`change(&s);   // fn change(s: &mut String)`, err:"mismatched types (expected `&mut String`, found `&String`)", fix:`change(&mut s);`, en:"Send &mut.", ar:"أرسل &mut." },
+   { bad:`fn change(s: &String) { s.push_str("!"); }`, err:"cannot borrow `*s` as mutable, as it is behind a `&` reference", fix:`fn change(s: &mut String) { s.push_str("!"); }`, en:"To change, the parameter must be &mut.", ar:"عشان تعدّل لازم &mut." },
+   { bad:`let r1 = &mut s;\nlet r2 = &mut s;\nprintln!("{r1}{r2}");`, err:"cannot borrow `s` as mutable more than once at a time", fix:`let r1 = &mut s;\nprintln!("{r1}");\nlet r2 = &mut s;`, en:"Finish with r1 before r2.", ar:"خلّص من r1 قبل r2." },
+   { bad:`fn make() -> &String { let s = String::from("a"); &s }`, err:"missing lifetime specifier (dangling reference)", fix:`fn make() -> String { String::from("a") }`, en:"Return the owned String.", ar:"ارجع الـ String نفسه." }
+  ],
+  practice:[
+   { type:"write", q:"Write `fn add_bang(s: &mut String)` that appends \"!\".", qa:"اكتب دالة تضيف \"!\" على String.",
+     accept:[`fn add_bang(s: &mut String) {\n    s.push_str("!");\n}`], test:`{{A}}\nfn main() { let mut m = String::from("hi"); add_bang(&mut m); println!("{m}"); }`, en:"Parameter `&mut String`.", ar:"الـ parameter نوعه `&mut String`." },
+   { type:"write", q:"`let mut msg = String::from(\"hey\");` exists. Call `add_bang` on it.", qa:"استدعِ add_bang على msg.",
+     accept:[`add_bang(&mut msg);`], test:`fn add_bang(s: &mut String) { s.push_str("!"); }\nfn main() { let mut msg = String::from("hey"); {{A}} println!("{msg}"); }`, en:"`&mut msg`", ar:"`&mut msg`" },
+   { type:"fix", q:"Fix it so `s` can still be printed after the call (borrow instead of move).", qa:"صحّح الكود عشان s ينطبع بعد الاستدعاء (استعارة بدل نقل).",
+     start:`fn len_of(s: String) -> usize {\n    s.len()\n}\nfn main() {\n    let s = String::from("hey");\n    let n = len_of(s);\n    println!("{s} {n}");\n}`,
+     accept:[`fn len_of(s: &String) -> usize {\n    s.len()\n}\nfn main() {\n    let s = String::from("hey");\n    let n = len_of(&s);\n    println!("{s} {n}");\n}`, `fn len_of(s: &str) -> usize {\n    s.len()\n}\nfn main() {\n    let s = String::from("hey");\n    let n = len_of(&s);\n    println!("{s} {n}");\n}`], test:`{{A}}`,
+     en:"Change BOTH: `&String` in the signature and `&s` at the call.", ar:"غيّر الاثنين: `&String` في التعريف و `&s` عند الاستدعاء." },
+   { type:"mcq", q:"A function only needs to READ a String. What should the parameter be?", qa:"دالة بس تقرأ String. وش نوع الـ parameter؟",
+     options:[`&String (or &str)`, `String`, `&mut String`, `mut String`], answer:0, en:"Borrow to read; the caller keeps ownership.", ar:"استعارة للقراءة والمالك يحتفظ بالملكية." }
+  ]},
+{ id:"slice", ch:"Ch 4", t:"Slices: &str and &[T]", ar:"الشرائح: &str و &[T]",
+  form:`let s = String::from("hello world");
+let hello = &s[0..5];        // start..end (end excluded)
+let world = &s[6..];         // to the end
+let all = &s[..];            // the whole thing
+
+fn first(s: &str) -> &str {  // &str accepts &String AND "literals"
+    let bytes = s.as_bytes();
+    for (i, &b) in bytes.iter().enumerate() {
+        if b == b' ' {
+            return &s[0..i];
+        }
+    }
+    &s[..]
+}
+
+let a = [1, 2, 3, 4];
+let part = &a[1..3];         // &[i32] = [2, 3]
+fn total(v: &[i32]) -> i32 { let mut t = 0; for x in v { t += x; } t }`,
+  points:[
+   ["A slice is a reference: it has `&` and owns nothing.","الشريحة مرجع: فيها `&` وما تملك شي."],
+   ["Prefer `&str` and `&[i32]` parameters: they accept more kinds of input.","فضّل `&str` و `&[i32]` كـ parameters لأنها تقبل أنواع أكثر."]
+  ],
+  pitfalls:[
+   { bad:`let w = first_word(&s);\ns.clear();\nprintln!("{w}");`, err:"cannot borrow `s` as mutable because it is also borrowed as immutable", fix:`let w = first_word(&s);\nprintln!("{w}");\ns.clear();`, en:"Use the slice before changing the String.", ar:"استخدم الشريحة قبل ما تغيّر النص." },
+   { bad:`let h = s[0..5];`, err:"the size for values of type `str` cannot be known at compilation time", fix:`let h = &s[0..5];`, en:"Slices need `&`.", ar:"الشريحة تحتاج `&`." }
+  ],
+  practice:[
+   { type:"write", q:"From `let s = String::from(\"rustacean\");` make a slice `first4` of the first 4 characters.", qa:"خذ أول 4 حروف في شريحة اسمها first4.",
+     accept:[`let first4 = &s[0..4];`, `let first4 = &s[..4];`], test:`fn main() { let s = String::from("rustacean"); {{A}} println!("{first4}"); }`, en:"`&s[0..4]` or `&s[..4]`.", ar:"`&s[0..4]` أو `&s[..4]`." },
+   { type:"write", q:"Write `fn sum(v: &[i32]) -> i32` that adds all elements.", qa:"اكتب دالة تجمع عناصر شريحة.",
+     accept:[`fn sum(v: &[i32]) -> i32 {\n    let mut total = 0;\n    for x in v {\n        total += x;\n    }\n    total\n}`],
+     re:[`fnsum\\(v:&\\[i32\\]\\)->i32\\{letmut(\\w+)(:i32)?=0;for(&)?(\\w+)inv\\{\\1(\\+=|=\\1\\+)\\*?\\4;?\\}\\1\\}`], test:`{{A}}\nfn main() { let a = [1, 2, 3, 4]; println!("{} {}", sum(&a), sum(&a[1..3])); }`, en:"Loop, add, return the total.", ar:"حلقة ثم جمع ثم إرجاع المجموع." },
+   { type:"order", q:"Order the lines of first_word.", qa:"رتّب أسطر first_word.",
+     lines:[`fn first_word(s: &str) -> &str {`, `    let bytes = s.as_bytes();`, `    for (i, &item) in bytes.iter().enumerate() {`, `        if item == b' ' {`, `            return &s[0..i];`, `        }`, `    }`, `    &s[..]`, `}`], test:`{{A}}\nfn main() { println!("{}", first_word("hi there")); }`,
+     en:"bytes → loop with enumerate → slice on space → whole string.", ar:"bytes ثم حلقة enumerate ثم شريحة عند المسافة ثم النص كامل." }
+  ]},
+/* ========================= CH 5 ========================= */
+{ id:"struct", ch:"Ch 5", t:"Structs: define, create, access, send", ar:"الـ Struct: تعريف وإنشاء ووصول وإرسال",
+  form:`struct User {                  // PascalCase name
+    name: String,              // field: Type,   (commas!)
+    age: u32,
+}
+
+let mut u = User {             // create: ALL fields, any order
+    name: String::from("Sara"),
+    age: 20,
+};
+println!("{}", u.name);        // access with .
+u.age += 1;                    // change: the WHOLE instance is mut
+
+fn show(u: &User) { println!("{} {}", u.name, u.age); }  // send to read → show(&u)
+fn birthday(u: &mut User) { u.age += 1; }               // send to change → birthday(&mut u)
+
+fn new_user(name: String, age: u32) -> User {
+    User { name, age }         // field init shorthand
+}
+let u2 = User { age: 30, ..u };   // struct update: ..other goes last`,
+  points:[
+   ["Use a struct when the data has names (a person, a product). Use `String` fields, not `&str`.","استخدم struct لما البيانات لها أسماء (شخص، منتج). الحقول `String` مو `&str`."],
+   ["Sending a struct to a function follows the same T / &T / &mut T rule as String.","إرسال الـ struct للدالة نفس قاعدة T و &T و &mut T."]
+  ],
+  pitfalls:[
+   { bad:`struct User {\n    name: String;\n}`, err:"struct fields are separated by `,`", fix:`struct User {\n    name: String,\n}`, en:"Fields are separated by commas.", ar:"الحقول بينها فواصل `,`." },
+   { bad:`let u = User { name: String::from("A") };`, err:"missing field `age` in initializer of `User`", fix:`let u = User { name: String::from("A"), age: 1 };`, en:"Give every field.", ar:"أعطِ كل الحقول." },
+   { bad:`let u = User { .. };\nu.age = 21;`, err:"cannot assign to `u.age`, as `u` is not declared as mutable", fix:`let mut u = User { .. };\nu.age = 21;`, en:"Make the instance mut.", ar:"خلّ الـ instance mut." },
+   { bad:`struct User { name: &str }`, err:"missing lifetime specifier", fix:`struct User { name: String }`, en:"Own the data with String.", ar:"استخدم String." },
+   { bad:`let u2 = User { age: 30, ..u };\nprintln!("{}", u.name);`, err:"borrow of moved value: `u.name`", fix:`println!("{}", u2.name);`, en:"`..u` moved the String fields.", ar:"`..u` نقل حقول String." }
+  ],
+  practice:[
+   { type:"write", q:"Define a struct `Car` with fields `brand: String` and `year: u32` (in that order).", qa:"عرّف struct اسمه Car فيه brand و year.",
+     accept:[`struct Car {\n    brand: String,\n    year: u32,\n}`], test:`{{A}}\nfn main() { let c = Car { brand: String::from("x"), year: 1 }; println!("{} {}", c.brand, c.year); }`, en:"`name: Type,` for each field.", ar:"`name: Type,` لكل حقل." },
+   { type:"write", q:"Create an instance `c` of Car with brand \"Toyota\" and year 2020 (brand first).", qa:"أنشئ instance اسمه c.",
+     accept:[`let c = Car {\n    brand: String::from("Toyota"),\n    year: 2020,\n};`], test:`struct Car { brand: String, year: u32 }\nfn main() { {{A}} println!("{} {}", c.brand, c.year); }`, en:"Use `String::from` for the String field.", ar:"استخدم `String::from` لحقل الـ String." },
+   { type:"write", q:"Write `fn print_car(c: &Car)` that prints `<brand> <year>` using `{} {}`.", qa:"اكتب دالة تطبع بيانات السيارة.",
+     accept:[`fn print_car(c: &Car) {\n    println!("{} {}", c.brand, c.year);\n}`], test:`struct Car { brand: String, year: u32 }\n{{A}}\nfn main() { let c = Car { brand: String::from("Toyota"), year: 2020 }; print_car(&c); }`, en:"Read fields with `c.brand`.", ar:"توصل للحقول بـ `c.brand`." },
+   { type:"write", q:"Call `print_car` with `c`.", qa:"استدعِ print_car مع c.",
+     accept:[`print_car(&c);`], test:`struct Car { brand: String, year: u32 }\nfn print_car(c: &Car) { println!("{} {}", c.brand, c.year); }\nfn main() { let c = Car { brand: String::from("T"), year: 1 }; {{A}} }`, en:"Send a reference.", ar:"أرسل مرجع." },
+   { type:"fill", q:"Fill in the blanks: a function that changes the year, and its call.", qa:"أكمل: دالة تغيّر السنة واستدعاؤها.",
+     code:`fn set_year(c: ___ Car, y: u32) {
+    c.year = y;
+}
+let ___ c = Car { brand: String::from("Kia"), year: 2019 };
+set_year(___ c, 2024);`, blanks:["&mut","mut","&mut"], test:`struct Car { brand: String, year: u32 }\nfn main() { {{A}} println!("{} {}", c.brand, c.year); }`, wrapFn:true,
+     en:"&mut in the type, mut on the variable, &mut at the call.", ar:"&mut في النوع، mut للمتغير، و &mut عند الاستدعاء." }
+  ]},
+{ id:"tstruct", ch:"Ch 5", t:"Tuple structs", ar:"الـ Tuple structs",
+  form:`struct Color(u8, u8, u8);         // name + types only
+struct Point(i32, i32);
+
+let red = Color(255, 0, 0);       // create
+let r = red.0;                    // access like a tuple
+fn shift(p: Point, dx: i32) -> Point {
+    Point(p.0 + dx, p.1)          // build a new one
+}`,
+  points:[["Each tuple struct is its own type: a `Point` can't be passed where a `Color` is expected.","كل tuple struct نوع مستقل، ما ينفع ترسل Point مكان Color."]],
+  pitfalls:[
+   { bad:`let c = Color { 255, 0, 0 };`, err:"expected identifier, found `255` (wrong brackets)", fix:`let c = Color(255, 0, 0);`, en:"Tuple structs use ( ).", ar:"الـ tuple struct بأقواس ( )." },
+   { bad:`paint(origin);   // fn paint(c: Color), origin: Point`, err:"mismatched types (expected `Color`, found `Point`)", fix:`paint(Color(0, 0, 0));`, en:"Different struct, different type.", ar:"struct مختلف = نوع مختلف." }
+  ],
+  practice:[
+   { type:"write", q:"Define a tuple struct `Point` with two `i32` values.", qa:"عرّف tuple struct اسمه Point فيه رقمين i32.",
+     accept:[`struct Point(i32, i32);`], test:`{{A}}\nfn main() { let p = Point(1, 2); println!("{}", p.0 + p.1); }`, en:"Don't forget the `;`.", ar:"لا تنسى `;`." },
+   { type:"write", q:"Create `p` as Point(3, 7) and store its second value in `y`.", qa:"أنشئ p وخزّن القيمة الثانية في y.",
+     accept:[`let p = Point(3, 7);\nlet y = p.1;`], test:`struct Point(i32, i32);\nfn main() { {{A}} println!("{y}"); }`, en:"Second value is `.1`.", ar:"القيمة الثانية `.1`." }
+  ]},
+{ id:"debug", ch:"Ch 5", t:"Printing structs: Debug", ar:"طباعة الـ structs: Debug",
+  form:`#[derive(Debug)]               // right above the struct
+struct Point { x: i32, y: i32 }
+
+let p = Point { x: 1, y: 2 };
+println!("{p:?}");     // Point { x: 1, y: 2 }
+println!("{:?}", p);   // same
+println!("{p:#?}");    // pretty, one field per line
+dbg!(&p);              // file:line + value; pass & to keep ownership`,
+  points:[["`{}` never works for your structs (no Display). Use `{:?}` + derive.","`{}` ما تشتغل مع الـ structs. استخدم `{:?}` مع derive."]],
+  pitfalls:[
+   { bad:`println!("{p}");`, err:"`Point` doesn't implement `std::fmt::Display`", fix:`println!("{p:?}");`, en:"Use the Debug format.", ar:"استخدم Debug." },
+   { bad:`struct Point { x: i32 }\nprintln!("{p:?}");`, err:"`Point` doesn't implement `Debug`", fix:`#[derive(Debug)]\nstruct Point { x: i32 }`, en:"Add the derive line.", ar:"ضيف سطر derive." },
+   { bad:`dbg!(p);\nprintln!("{}", p.x);`, err:"borrow of moved value: `p`", fix:`dbg!(&p);`, en:"dbg! takes ownership.", ar:"dbg! تاخذ الملكية." }
+  ],
+  practice:[
+   { type:"write", q:"Write the line that goes above `struct Point` so it can be printed with `{:?}`.", qa:"اكتب السطر اللي فوق الـ struct عشان ينطبع بـ {:?}.",
+     accept:[`#[derive(Debug)]`], test:`{{A}}\nstruct Point { x: i32 }\nfn main() { println!("{:?}", Point { x: 1 }); }`, en:"An attribute.", ar:"attribute." },
+   { type:"mcq", q:"`#[derive(Debug)] struct P { a: u8 }` and `let p = P { a: 7 };`. What does `println!(\"{p:?}\")` print?", qa:"وش يطبع؟",
+     options:[`P { a: 7 }`, `7`, `P(7)`, `{ a: 7 }`], answer:0, en:"Name, then fields in braces.", ar:"الاسم ثم الحقول بين أقواس." }
+  ]},
+{ id:"impl", ch:"Ch 5", t:"impl: methods & associated functions", ar:"impl: الـ methods والدوال المرتبطة",
+  form:`impl Rect {
+    fn new(w: u32, h: u32) -> Self {      // associated fn (no self): constructor
+        Self { w, h }
+    }
+    fn area(&self) -> u32 {               // read → &self
+        self.w * self.h
+    }
+    fn scale(&mut self, k: u32) {         // change → &mut self
+        self.w *= k;
+        self.h *= k;
+    }
+    fn fits(&self, other: &Rect) -> bool {   // extra params after self
+        self.w >= other.w && self.h >= other.h
+    }
+}
+
+let mut r = Rect::new(2, 3);   // :: for associated functions
+let a = r.area();              // . for methods
+r.scale(2);                    // &mut self method → let mut r`,
+  table:[["Read fields","&self","r.area()","قراءة"],["Change fields","&mut self","r.scale(2) + let mut r","تعديل"],["Make a new one","(no self) -> Self","Rect::new(2, 3)","إنشاء"]],
+  points:[["Inside a method, reach fields with `self.field`.","داخل الـ method توصل للحقول بـ `self.field`."]],
+  pitfalls:[
+   { bad:`fn grow(&self) { self.w += 1; }`, err:"cannot assign to `self.w`, which is behind a `&` reference", fix:`fn grow(&mut self) { self.w += 1; }`, en:"Changing needs &mut self.", ar:"التعديل يحتاج &mut self." },
+   { bad:`let r = Rect::new(1, 1);\nr.scale(2);`, err:"cannot borrow `r` as mutable, as it is not declared as mutable", fix:`let mut r = Rect::new(1, 1);`, en:"The instance must be mut.", ar:"الـ instance لازم mut." },
+   { bad:`let r = rect.new(1, 1);`, err:"no method named `new` found", fix:`let r = Rect::new(1, 1);`, en:"Associated functions use `Type::`.", ar:"الدوال المرتبطة بـ `Type::`." },
+   { bad:`fn area(&self) -> u32 { w * h }`, err:"cannot find value `w` in this scope", fix:`fn area(&self) -> u32 { self.w * self.h }`, en:"Use `self.`.", ar:"استخدم `self.`." }
+  ],
+  practice:[
+   { type:"write", q:"Inside `impl Rect`, write the method `area` that returns w times h (fields `w`, `h` are u32).", qa:"اكتب method اسمها area.",
+     accept:[`fn area(&self) -> u32 {\n    self.w * self.h\n}`], test:`struct Rect { w: u32, h: u32 }\nimpl Rect {\n{{A}}\n}\nfn main() { println!("{}", Rect { w: 2, h: 3 }.area()); }`, en:"`&self` and `self.w`.", ar:"`&self` و `self.w`." },
+   { type:"write", q:"Write the associated function `new(w: u32, h: u32) -> Self` using the field init shorthand.", qa:"اكتب دالة new بالاختصار.",
+     accept:[`fn new(w: u32, h: u32) -> Self {\n    Self { w, h }\n}`, `fn new(w: u32, h: u32) -> Self {\n    Rect { w, h }\n}`], test:`struct Rect { w: u32, h: u32 }\nimpl Rect {\n{{A}}\n}\nfn main() { let r = Rect::new(2, 3); println!("{}", r.w * r.h); }`, en:"No self; returns Self.", ar:"بدون self وترجع Self." },
+   { type:"fix", q:"Fix the method so it can change the width.", qa:"صحّح الـ method عشان تقدر تغيّر العرض.",
+     start:`fn widen(&self, d: u32) {\n    self.w += d;\n}`, accept:[`fn widen(&mut self, d: u32) {\n    self.w += d;\n}`], test:`struct Rect { w: u32 }\nimpl Rect {\n{{A}}\n}\nfn main() { let mut r = Rect { w: 1 }; r.widen(2); println!("{}", r.w); }`, en:"&mut self.", ar:"&mut self." },
+   { type:"order", q:"Order the lines: a Counter with new, inc and a call in main.", qa:"رتّب الأسطر: Counter مع new و inc.",
+     lines:[`struct Counter {`, `    n: u32,`, `}`, `impl Counter {`, `    fn new() -> Self {`, `        Self { n: 0 }`, `    }`, `    fn inc(&mut self) {`, `        self.n += 1;`, `    }`, `}`, `fn main() {`, `    let mut c = Counter::new();`, `    c.inc();`, `    println!("{}", c.n);`, `}`], test:`{{A}}`,
+     en:"struct → impl → main. `let mut` because inc changes c.", ar:"struct ثم impl ثم main، و `let mut` لأن inc تعدّل." }
+  ]}
+];
+if (typeof module !== "undefined") module.exports = { SKILLS };
+
+/* Graded programs. forms = skill ids whose form is shown in Help. */
+const PROGRAMS = [
+{ lvl:1, t:"Rectangle with a tuple", ar:"مستطيل بـ tuple", ideas:["tuple","fn"],
+  task:"Store a rectangle's size as a tuple `(u32, u32)` = (3, 4). Write `fn area(dims: (u32, u32)) -> u32` and `fn perimeter(dims: (u32, u32)) -> u32`, and print both.",
+  arTask:"خزّن أبعاد مستطيل في tuple، واكتب دالتين للمساحة والمحيط واطبعهم.",
+  output:"Area: 12\nPerimeter: 14",
+  hints:["Create the tuple in main: `let rect = (3, 4);`","area returns `dims.0 * dims.1` (no `;`).","perimeter returns `2 * (dims.0 + dims.1)`.","Call each one with `rect` and print with `{}`."],
+  arHints:["أنشئ الـ tuple في main.","area ترجع `dims.0 * dims.1` بدون `;`.","perimeter ترجع `2 * (dims.0 + dims.1)`.","استدعِ الدالتين واطبع النتيجة."],
+  forms:["tuple","fn"], mistakes:[["Writing `dims[0]` instead of `dims.0`.","كتابة `dims[0]` بدل `dims.0`."],["A `;` after the returned expression.","`;` بعد القيمة المرجعة."]],
+  model:`fn area(dims: (u32, u32)) -> u32 {
+    dims.0 * dims.1
+}
+
+fn perimeter(dims: (u32, u32)) -> u32 {
+    2 * (dims.0 + dims.1)
+}
+
+fn main() {
+    let rect = (3, 4);
+    println!("Area: {}", area(rect));
+    println!("Perimeter: {}", perimeter(rect));
+}` },
+{ lvl:1, t:"Even numbers in an array", ar:"الأرقام الزوجية في مصفوفة", ideas:["array","loop","if"],
+  task:"Given `let nums = [3, 8, 5, 12, 7, 6];`, count the even numbers and add them up with a `for` loop. Print `Evens: 3, sum: 26`.",
+  arTask:"من مصفوفة أرقام، عدّ الزوجية واجمعها بحلقة for.",
+  output:"Evens: 3, sum: 26",
+  hints:["Two counters: `let mut count = 0;` and `let mut sum = 0;`.","`for n in nums { }`","Inside: `if n % 2 == 0 { count += 1; sum += n; }`","Print after the loop."],
+  arHints:["عدادين بـ `let mut`.","`for n in nums { }`","داخلها: إذا `n % 2 == 0` زِد العداد والمجموع.","اطبع بعد الحلقة."],
+  forms:["array","loop","if"], mistakes:[["Forgetting `mut` on the counters.","نسيان `mut` للعدادات."],["Printing inside the loop (prints many times).","الطباعة داخل الحلقة تطبع أكثر من مرة."]],
+  model:`fn main() {
+    let nums = [3, 8, 5, 12, 7, 6];
+    let mut count = 0;
+    let mut sum = 0;
+    for n in nums {
+        if n % 2 == 0 {
+            count += 1;
+            sum += n;
+        }
+    }
+    println!("Evens: {count}, sum: {sum}");
+}` },
+{ lvl:2, t:"Grades report", ar:"تقرير الدرجات", ideas:["fn","if","array","loop"],
+  task:"Write `fn grade(score: u32) -> char` (90+ A, 80+ B, 70+ C, else F). Loop over `[95, 82, 67, 74, 88]`, print `95 -> A` for each, then count how many A and B grades there are.",
+  arTask:"اكتب دالة تحول الدرجة لحرف، واطبع لكل درجة حرفها، وبعدين عدد A و B.",
+  output:"95 -> A\n82 -> B\n67 -> F\n74 -> C\n88 -> B\nA: 1, B: 2",
+  hints:["Write grade first: an if / else if chain, highest limit first, each arm a char like `'A'`.","In main: the array and two counters `a_count`, `b_count`.","In the loop: `let g = grade(s);` then print.","Count with `if g == 'A' { .. } else if g == 'B' { .. }`."],
+  arHints:["اكتب grade أول: سلسلة if / else if من الأعلى.","في main: المصفوفة وعدادين.","في الحلقة: `let g = grade(s);` ثم اطبع.","عدّ بـ if على g."],
+  forms:["fn","if","loop"], mistakes:[["Checking `>= 70` before `>= 90` (everything becomes C).","تبدأ بـ 70 قبل 90 فيصير كل شي C."],["Using double quotes \"A\" for a char.","تستخدم \"A\" بدل 'A'."]],
+  model:`fn grade(score: u32) -> char {
+    if score >= 90 {
+        'A'
+    } else if score >= 80 {
+        'B'
+    } else if score >= 70 {
+        'C'
+    } else {
+        'F'
+    }
+}
+
+fn main() {
+    let scores = [95, 82, 67, 74, 88];
+    let mut a_count = 0;
+    let mut b_count = 0;
+    for s in scores {
+        let g = grade(s);
+        println!("{s} -> {g}");
+        if g == 'A' {
+            a_count += 1;
+        } else if g == 'B' {
+            b_count += 1;
+        }
+    }
+    println!("A: {a_count}, B: {b_count}");
+}` },
+{ lvl:2, t:"Points: send structs to functions", ar:"النقاط: إرسال structs للدوال", ideas:["struct","ref","fn"],
+  task:"Define `#[derive(Debug)] struct Point { x: i32, y: i32 }`. Write `fn distance(a: &Point, b: &Point) -> i32` (|dx| + |dy|, write your own `abs` with if) and `fn move_right(p: &mut Point, d: i32)`. Start with (1, 2) and (4, 6).",
+  arTask:"عرّف struct للنقطة، واكتب دالة للمسافة تاخذ مراجع، ودالة تحرك النقطة تاخذ &mut.",
+  output:"distance = 7\nPoint { x: 4, y: 2 }\ndistance = 4",
+  hints:["Write `fn abs(n: i32) -> i32 { if n < 0 { -n } else { n } }`.","distance: `abs(a.x - b.x) + abs(a.y - b.y)`.","move_right: `p.x += d;` (needs `&mut Point`).","In main: `let mut p1`, call `distance(&p1, &p2)`, `move_right(&mut p1, 3)`, print `{:?}`."],
+  arHints:["اكتب دالة abs بـ if.","distance تجمع الفرقين.","move_right: `p.x += d;`","في main: `let mut p1` وأرسل `&` و `&mut`."],
+  forms:["struct","ref","debug"], mistakes:[["Sending `p1` instead of `&p1` (moves it).","ترسل p1 بدل &p1 فينتقل."],["`let p1` without mut, then `&mut p1`.","`let p1` بدون mut ثم `&mut p1`."]],
+  model:`#[derive(Debug)]
+struct Point {
+    x: i32,
+    y: i32,
+}
+
+fn abs(n: i32) -> i32 {
+    if n < 0 { -n } else { n }
+}
+
+fn distance(a: &Point, b: &Point) -> i32 {
+    abs(a.x - b.x) + abs(a.y - b.y)
+}
+
+fn move_right(p: &mut Point, d: i32) {
+    p.x += d;
+}
+
+fn main() {
+    let mut p1 = Point { x: 1, y: 2 };
+    let p2 = Point { x: 4, y: 6 };
+    println!("distance = {}", distance(&p1, &p2));
+    move_right(&mut p1, 3);
+    println!("{:?}", p1);
+    println!("distance = {}", distance(&p1, &p2));
+}` },
+{ lvl:3, t:"Temperature stats (return a tuple)", ar:"إحصائيات الحرارة (إرجاع tuple)", ideas:["slice","tuple","loop"],
+  task:"Write `fn stats(t: &[f64]) -> (f64, f64, f64)` that returns (min, max, average). Call it with `[22.5, 30.0, 18.5, 25.0]`, destructure the result and print it.",
+  arTask:"اكتب دالة تاخذ شريحة أرقام عشرية وترجع (الأصغر، الأكبر، المتوسط) في tuple، وفكّكها في main.",
+  output:"min 18.5, max 30, avg 24",
+  hints:["Start `min` and `max` at `t[0]`, `sum` at `0.0`.","`for &x in t { }` and update min, max, sum.","Average: `sum / t.len() as f64`.","Return `(min, max, sum / ...)`. In main: `let (lo, hi, avg) = stats(&temps);`"],
+  arHints:["ابدأ min و max من `t[0]` و sum من `0.0`.","`for &x in t` وحدّث القيم.","المتوسط: `sum / t.len() as f64`.","ارجع tuple وفكّكه في main."],
+  forms:["slice","tuple","loop"], mistakes:[["`let mut sum = 0;` (an integer) then adding f64 → cannot add a float to an integer.","`sum = 0` صحيح ثم تجمع عليه عشري ← خطأ."],["Dividing by `t.len()` without `as f64`.","تقسم على `t.len()` بدون `as f64`."]],
+  model:`fn stats(t: &[f64]) -> (f64, f64, f64) {
+    let mut min = t[0];
+    let mut max = t[0];
+    let mut sum = 0.0;
+    for &x in t {
+        if x < min {
+            min = x;
+        }
+        if x > max {
+            max = x;
+        }
+        sum += x;
+    }
+    (min, max, sum / t.len() as f64)
+}
+
+fn main() {
+    let temps = [22.5, 30.0, 18.5, 25.0];
+    let (lo, hi, avg) = stats(&temps);
+    println!("min {lo}, max {hi}, avg {avg}");
+}` },
+{ lvl:3, t:"Build a label (String + loops)", ar:"بناء نص (String مع الحلقات)", ideas:["string","loop","ref"],
+  task:"Write `fn repeat_word(word: &str, n: u32) -> String` that joins the word n times with `-` between (\"ha-ha-ha\"), and `fn bracket(s: &str) -> String` that returns `[s]`. Print `bracket(&repeat_word(\"ha\", 3))`.",
+  arTask:"اكتب دالة تكرر كلمة n مرات بينها `-`، ودالة تحط النص بين أقواس مربعة.",
+  output:"ha-ha-ha\n[ha-ha-ha]",
+  hints:["`let mut out = String::new();`","`for i in 0..n { }`: if `i > 0` push \"-\" first, then push the word.","Return `out` with no `;`.","bracket: start with `String::from(\"[\")`, push s, push \"]\"."],
+  arHints:["`let mut out = String::new();`","حلقة من 0 إلى n: إذا i > 0 ضيف \"-\" ثم الكلمة.","ارجع out بدون `;`.","bracket: ابدأ بـ \"[\" وضيف النص و \"]\"."],
+  forms:["string","loop","ref"], mistakes:[["A `-` at the end because the separator is added after every word.","`-` زايدة في الآخر."],["Returning `&out` (a reference to a local) instead of `out`.","ترجع `&out` بدل `out`."]],
+  model:`fn repeat_word(word: &str, n: u32) -> String {
+    let mut out = String::new();
+    for i in 0..n {
+        if i > 0 {
+            out.push_str("-");
+        }
+        out.push_str(word);
+    }
+    out
+}
+
+fn bracket(s: &str) -> String {
+    let mut out = String::from("[");
+    out.push_str(s);
+    out.push_str("]");
+    out
+}
+
+fn main() {
+    let r = repeat_word("ha", 3);
+    println!("{r}");
+    println!("{}", bracket(&r));
+}` },
+{ lvl:3, t:"Product with impl", ar:"منتج مع impl", ideas:["struct","impl"],
+  task:"`struct Product { name: String, price: f64, qty: u32 }` with `fn new(name: &str, price: f64, qty: u32) -> Self`, `fn total(&self) -> f64` (price × qty), and `fn discount(&mut self, percent: f64)`. Make a pen at 2.5 × 4, print the total, apply 20% off, print again.",
+  arTask:"struct لمنتج مع new و total و discount. أنشئ منتج واطبع الإجمالي قبل وبعد الخصم.",
+  output:"Pen: 10\nPen: 8",
+  hints:["new: `Self { name: String::from(name), price, qty }`.","total: `self.price * self.qty as f64`.","discount: `self.price -= self.price * percent / 100.0;`","main: `let mut p = Product::new(\"Pen\", 2.5, 4);`, `p.discount(20.0);`"],
+  arHints:["new تحول name لـ String.","total: السعر × الكمية مع `as f64`.","discount تنقص السعر بالنسبة.","main: `let mut p` لأن discount تعدّل."],
+  forms:["struct","impl"], mistakes:[["`discount(&self, ..)` → cannot assign to `self.price`.","`&self` بدل `&mut self`."],["`p.discount(20)`: 20 is an integer, the parameter is f64.","20 صحيح والـ parameter عشري، اكتب 20.0."]],
+  model:`struct Product {
+    name: String,
+    price: f64,
+    qty: u32,
+}
+
+impl Product {
+    fn new(name: &str, price: f64, qty: u32) -> Self {
+        Self {
+            name: String::from(name),
+            price,
+            qty,
+        }
+    }
+
+    fn total(&self) -> f64 {
+        self.price * self.qty as f64
+    }
+
+    fn discount(&mut self, percent: f64) {
+        self.price -= self.price * percent / 100.0;
+    }
+}
+
+fn main() {
+    let mut p = Product::new("Pen", 2.5, 4);
+    println!("{}: {}", p.name, p.total());
+    p.discount(20.0);
+    println!("{}: {}", p.name, p.total());
+}` },
+{ lvl:4, t:"Menu with input validation", ar:"قائمة مع التحقق من المدخلات", ideas:["input","loop","if"], input:"abc\n12\n7\n",
+  task:"Keep asking for a number from 1 to 9. Skip text with `continue`, reject numbers out of range with a message, and when it's valid, print its table from ×1 to ×5 and stop.",
+  arTask:"اطلب رقم من 1 إلى 9 لين يدخل رقم صحيح. تجاهل النص، وارفض الرقم خارج المدى برسالة، وبعدين اطبع جدوله من 1 إلى 5.",
+  output:"Enter 1-9:\nEnter 1-9:\nOut of range\nEnter 1-9:\n7 x 1 = 7\n7 x 2 = 14\n7 x 3 = 21\n7 x 4 = 28\n7 x 5 = 35",
+  hints:["`loop { }` around everything; new `String::new()` inside.","Print the prompt, read_line, then `match input.trim().parse()` with `Err(_) => continue`.","`if n < 1 || n > 9 { println!(\"Out of range\"); continue; }`","`for i in 1..=5 { .. }` then `break;`."],
+  arHints:["كل شي داخل loop، و String جديد كل دورة.","اطبع الطلب ثم اقرأ ثم match على parse.","تحقق من المدى بـ if و continue.","for من 1 إلى 5 ثم break."],
+  forms:["input","loop","if"], mistakes:[["Creating the String outside the loop (old input stays).","إنشاء String برا الحلقة."],["Forgetting `break` → asks again forever.","نسيان break."]],
+  model:`use std::io;
+
+fn main() {
+    loop {
+        println!("Enter 1-9:");
+        let mut input = String::new();
+        io::stdin()
+            .read_line(&mut input)
+            .expect("Failed to read line");
+
+        let n: u32 = match input.trim().parse() {
+            Ok(num) => num,
+            Err(_) => continue,
+        };
+
+        if n < 1 || n > 9 {
+            println!("Out of range");
+            continue;
+        }
+
+        for i in 1..=5 {
+            println!("{n} x {i} = {}", n * i);
+        }
+        break;
+    }
+}` },
+{ lvl:4, t:"Library shelf (struct array + slice)", ar:"رف المكتبة (مصفوفة structs + شريحة)", ideas:["struct","impl","slice","loop"],
+  task:"`struct Book { title: String, pages: u32 }` with `new(title: &str, pages: u32)` and `is_long(&self) -> bool` (over 300 pages). Write `fn longest(books: &[Book]) -> &Book`. With 3 books, print each with `long`/`short` and then the longest title.",
+  arTask:"struct للكتاب مع new و is_long، ودالة ترجع مرجع لأطول كتاب من شريحة كتب.",
+  output:"Dune: long\nMomo: short\nIt: long\nLongest: It",
+  hints:["Make the array: `let books = [Book::new(\"Dune\", 412), ...];`","Print loop: `for b in &books { }` and use `if b.is_long() { \"long\" } else { \"short\" }`.","longest: `let mut best = &books[0];` then loop and compare pages.","Return `best`; print `longest(&books).title`."],
+  arHints:["أنشئ مصفوفة كتب بـ Book::new.","`for b in &books` واستخدم if داخل let.","longest: ابدأ بـ `&books[0]` وقارن الصفحات.","ارجع best واطبع العنوان."],
+  forms:["struct","impl","slice"], mistakes:[["`for b in books` moves the array; later `&books` fails.","`for b in books` ينقل المصفوفة."],["Returning `books[0]` (moves out) instead of `&books[0]`.","ترجع `books[0]` بدل `&books[0]`."]],
+  model:`struct Book {
+    title: String,
+    pages: u32,
+}
+
+impl Book {
+    fn new(title: &str, pages: u32) -> Self {
+        Self {
+            title: String::from(title),
+            pages,
+        }
+    }
+
+    fn is_long(&self) -> bool {
+        self.pages > 300
+    }
+}
+
+fn longest(books: &[Book]) -> &Book {
+    let mut best = &books[0];
+    for b in books {
+        if b.pages > best.pages {
+            best = b;
+        }
+    }
+    best
+}
+
+fn main() {
+    let books = [
+        Book::new("Dune", 412),
+        Book::new("Momo", 240),
+        Book::new("It", 1138),
+    ];
+    for b in &books {
+        let kind = if b.is_long() { "long" } else { "short" };
+        println!("{}: {}", b.title, kind);
+    }
+    println!("Longest: {}", longest(&books).title);
+}` },
+{ lvl:4, t:"Initials (slices and bytes)", ar:"الحروف الأولى (شرائح وبايتات)", ideas:["slice","string","loop"],
+  task:"Write `fn initials(name: &str) -> String` that returns the first letter of every word (single spaces). \"Sara Ali Ahmed\" → \"SAA\".",
+  arTask:"اكتب دالة ترجع أول حرف من كل كلمة في الاسم.",
+  output:"SAA\nR",
+  hints:["`let mut out = String::new();` and push the first letter: `out.push_str(&name[0..1]);`","`for (i, &b) in name.as_bytes().iter().enumerate() { }`","If `b == b' '`, the next word starts at `i + 1`: push `&name[i + 1..i + 2]`.","Return `out`."],
+  arHints:["ابدأ بأول حرف `&name[0..1]`.","حلقة enumerate على البايتات.","عند المسافة، الحرف اللي بعدها `&name[i + 1..i + 2]`.","ارجع out."],
+  forms:["slice","string"], mistakes:[["`name[0..1]` without `&`.","نسيان `&` قبل الشريحة."],["`b == ' '` (char) instead of `b' '` (byte).","مقارنة بـ `' '` بدل `b' '`."]],
+  model:`fn initials(name: &str) -> String {
+    let mut out = String::new();
+    out.push_str(&name[0..1]);
+    for (i, &b) in name.as_bytes().iter().enumerate() {
+        if b == b' ' {
+            out.push_str(&name[i + 1..i + 2]);
+        }
+    }
+    out
+}
+
+fn main() {
+    println!("{}", initials("Sara Ali Ahmed"));
+    println!("{}", initials("Rust"));
+}` },
+{ lvl:5, t:"Store inventory (exam style)", ar:"مخزون المتجر (مثل الاختبار)", ideas:["struct","impl","slice","tuple","loop"],
+  task:"`struct Item { name: String, qty: u32, price: f64 }` with `new`, `value(&self) -> f64`, `sell(&mut self, n: u32) -> bool` (false if not enough stock) and `restock(&mut self, n: u32)`. Write `fn summary(items: &[Item]) -> (u32, f64)` returning total quantity and total value. In main: 3 items, sell 3 of the first, try to sell 50 of the second, restock the third by 5, print every item and the summary.",
+  arTask:"struct للمنتج مع new و value و sell و restock، ودالة summary ترجع tuple (إجمالي الكمية، إجمالي القيمة). جرّب بيع وإعادة تعبئة واطبع كل شي.",
+  output:"sell 3 Pen: true\nsell 50 Book: false\nPen x7 = 17.5\nBook x4 = 48\nBag x7 = 210\nTotal: 18 items, 275.5",
+  hints:["Write the struct and `new` (String::from(name), shorthand for the rest).","value: `self.price * self.qty as f64`. sell: `if n > self.qty { return false; }` then subtract, `true`.","summary: two totals, `for it in items`, return `(q, v)`.","main: `let mut items = [...]`; call `items[0].sell(3)`; loop `for it in &items`; `let (q, v) = summary(&items);`"],
+  arHints:["struct و new أول.","value و sell (ارجع false إذا الكمية ما تكفي).","summary: مجموعين وحلقة وترجع tuple.","main: `let mut items` واستدعِ الدوال وفكّك الـ tuple."],
+  forms:["struct","impl","slice","tuple"], mistakes:[["`let items = [..]` without mut, then `items[0].sell(3)`.","`items` بدون mut."],["Subtracting before checking (u32 can't go below 0 → panic).","تطرح قبل ما تتحقق."],["`for it in items` moves the array before `summary(&items)`.","`for it in items` ينقل المصفوفة."]],
+  model:`struct Item {
+    name: String,
+    qty: u32,
+    price: f64,
+}
+
+impl Item {
+    fn new(name: &str, qty: u32, price: f64) -> Self {
+        Self {
+            name: String::from(name),
+            qty,
+            price,
+        }
+    }
+
+    fn value(&self) -> f64 {
+        self.price * self.qty as f64
+    }
+
+    fn sell(&mut self, n: u32) -> bool {
+        if n > self.qty {
+            return false;
+        }
+        self.qty -= n;
+        true
+    }
+
+    fn restock(&mut self, n: u32) {
+        self.qty += n;
+    }
+}
+
+fn summary(items: &[Item]) -> (u32, f64) {
+    let mut total_qty = 0;
+    let mut total_value = 0.0;
+    for it in items {
+        total_qty += it.qty;
+        total_value += it.value();
+    }
+    (total_qty, total_value)
+}
+
+fn main() {
+    let mut items = [
+        Item::new("Pen", 10, 2.5),
+        Item::new("Book", 4, 12.0),
+        Item::new("Bag", 2, 30.0),
+    ];
+    println!("sell 3 Pen: {}", items[0].sell(3));
+    println!("sell 50 Book: {}", items[1].sell(50));
+    items[2].restock(5);
+    for it in &items {
+        println!("{} x{} = {}", it.name, it.qty, it.value());
+    }
+    let (q, v) = summary(&items);
+    println!("Total: {q} items, {v}");
+}` },
+{ lvl:5, t:"Guessing game with a struct", ar:"لعبة التخمين مع struct", ideas:["input","struct","impl","loop"], input:"50\nabc\n30\n42\n",
+  task:"`struct Game { secret: u32, tries: u32 }` with `fn new(secret: u32) -> Self` and `fn check(&mut self, guess: u32) -> Ordering` (adds 1 to tries, returns `guess.cmp(&self.secret)`). Main reads guesses in a loop (skip bad input) and prints Too small!/Too big!/`You win in N tries!`. Secret: 42.",
+  arTask:"لعبة التخمين لكن بـ struct: Game فيه الرقم السري وعدد المحاولات، و check ترجع Ordering.",
+  output:"Too big!\nToo small!\nYou win in 3 tries!",
+  hints:["`use std::cmp::Ordering;` and `use std::io;` at the top.","check: `self.tries += 1; guess.cmp(&self.secret)` (needs `&mut self`).","main: `let mut game = Game::new(42);` then `loop` with read_line and match on parse.","`match game.check(guess) { Ordering::Equal => { println!(..., game.tries); break; } ... }`"],
+  arHints:["سطري use فوق.","check تزيد tries وترجع cmp، وتحتاج &mut self.","main: `let mut game` ثم loop وقراءة وتحويل.","match على `game.check(guess)` ومع Equal اطبع واطلع."],
+  forms:["impl","input","loop"], mistakes:[["`fn check(&self, ..)` → cannot assign to `self.tries`.","`&self` بدل `&mut self`."],["Missing an Ordering arm → non-exhaustive patterns.","نسيان حالة من Ordering."]],
+  model:`use std::cmp::Ordering;
+use std::io;
+
+struct Game {
+    secret: u32,
+    tries: u32,
+}
+
+impl Game {
+    fn new(secret: u32) -> Self {
+        Self { secret, tries: 0 }
+    }
+
+    fn check(&mut self, guess: u32) -> Ordering {
+        self.tries += 1;
+        guess.cmp(&self.secret)
+    }
+}
+
+fn main() {
+    let mut game = Game::new(42);
+    loop {
+        let mut input = String::new();
+        io::stdin()
+            .read_line(&mut input)
+            .expect("Failed to read line");
+        let guess: u32 = match input.trim().parse() {
+            Ok(num) => num,
+            Err(_) => continue,
+        };
+        match game.check(guess) {
+            Ordering::Less => println!("Too small!"),
+            Ordering::Greater => println!("Too big!"),
+            Ordering::Equal => {
+                println!("You win in {} tries!", game.tries);
+                break;
+            }
+        }
+    }
+}` }
+];
+const STEPS = [
+ ["Read the task and list the data. Names → struct. 2–3 mixed values → tuple. Many values of one type → array.","اقرأ السؤال وحدد البيانات: لها أسماء ← struct، قيمتين أو ثلاث مختلفة ← tuple، قيم كثيرة من نوع واحد ← array."],
+ ["Write the skeleton: `use` lines (io, Ordering), struct definitions, `fn main() { }`.","اكتب الهيكل: أسطر use، تعريف الـ structs، و `fn main() { }`."],
+ ["Write every function's FIRST line: name, parameters with types (T, &T or &mut T), and `-> return type`.","اكتب السطر الأول لكل دالة: الاسم والـ parameters مع أنواعها (T أو &T أو &mut T) ونوع الإرجاع."],
+ ["Fill the bodies. Statements end with `;`. The value you return is the last line, without `;`.","عبّي جسم الدوال. الجمل تنتهي بـ `;`، والقيمة المرجعة آخر سطر بدون `;`."],
+ ["In main: create the data (`let mut` if it will change), call the functions (`&x`, `&mut x`, `Type::new`), and print in the exact format asked.","في main: أنشئ البيانات (`let mut` إذا بتتغير)، استدعِ الدوال، واطبع بالشكل المطلوب بالضبط."],
+ ["Check: every `{` closed? `mut` where you change? `&` on both sides? types match (no int + float)? `#[derive(Debug)]` if you print with `{:?}`?","راجع: كل `{` مقفلة؟ `mut` وين تعدّل؟ `&` في الطرفين؟ الأنواع متطابقة؟ `#[derive(Debug)]` إذا بتطبع بـ `{:?}`؟"]
+];
+if (typeof module !== "undefined") module.exports = { PROGRAMS, STEPS };
+
+</script>
+<script>
+(function(){
+const $ = s=>document.querySelector(s);
+const esc = s=>String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+const inl = s=>esc(s).replace(/`([^`]+)`/g,"<code>$1</code>").replace(/\*\*([^*]+)\*\*/g,"<strong>$1</strong>");
+const KW=/^(fn|let|mut|const|if|else|loop|while|for|in|break|continue|return|match|struct|impl|use|self|Self|true|false|as)$/;
+const TY=/^(i8|i16|i32|i64|u8|u16|u32|u64|usize|f32|f64|bool|char|str|String|Result|Ok|Err|Ordering)$/;
+function hl(src){
+  const re=/(\/\/[^\n]*)|("(?:\\.|[^"\\])*")|(b?'(?:\\.|[^'\\])'(?!\w))|('[a-z_]+)|(\b\d[\d_]*(?:\.\d+)?\b)|([A-Za-z_][A-Za-z0-9_]*!?)|(#\[[^\]]*\])/g;
+  let o="",last=0,m;
+  while((m=re.exec(src))){ o+=esc(src.slice(last,m.index)); last=re.lastIndex; const t=m[0];
+    if(m[1]||m[7]) o+=`<span class="tk-c">${esc(t)}</span>`;
+    else if(m[2]||m[3]) o+=`<span class="tk-s">${esc(t)}</span>`;
+    else if(m[4]) o+=`<span class="tk-m">${esc(t)}</span>`;
+    else if(m[5]) o+=`<span class="tk-n">${esc(t)}</span>`;
+    else if(t.endsWith("!")) o+=`<span class="tk-m">${esc(t)}</span>`;
+    else if(KW.test(t)) o+=`<span class="tk-k">${esc(t)}</span>`;
+    else if(TY.test(t)) o+=`<span class="tk-n">${esc(t)}</span>`;
+    else o+=esc(t); }
+  return o+esc(src.slice(last));
+}
+const code = s=>`<pre class="code"><code>${hl(s)}</code></pre>`;
+const store={ get(k,d){ try{ const v=localStorage.getItem("rwt:"+k); return v==null?d:JSON.parse(v);}catch(e){return d;} }, set(k,v){ try{ localStorage.setItem("rwt:"+k,JSON.stringify(v)); }catch(e){} } };
+const norm = s=>String(s).replace(/\/\/[^\n]*/g,"").replace(/\s+/g,"").replace(/,([}\)\]])/g,"$1");
+function matches(item, val){
+  const x = norm(val);
+  if((item.accept||[]).some(a=>{ const n=norm(a); return n===x || n.replace(/;$/,"")===x.replace(/;$/,""); })) return true;
+  return (item.re||[]).some(r=>{ const R=new RegExp("^"+r+"$"); return R.test(x)||R.test(x+";")||R.test(x.replace(/;$/,"")); });
+}
+function shuffle(a){ a=a.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+const bi = (en, ar)=> `<span class="en">${inl(en)}</span>${ar?` <span class="ar ar-inline" dir="rtl" style="display:block">${inl(ar)}</span>`:""}`;
+
+/* smart textarea: Tab = 4 spaces, Enter keeps indentation (+4 after {) */
+function smart(ta){
+  ta.addEventListener("keydown", e=>{
+    const s=ta.selectionStart, v=ta.value;
+    if(e.key==="}"){ const ls=v.lastIndexOf("\n", s-1)+1, before=v.slice(ls, s);
+      if(/^ {4,}$/.test(before) && s===ta.selectionEnd){ e.preventDefault(); ta.setRangeText(before.slice(4)+"}", ls, s, "end"); ta.dispatchEvent(new Event("input")); return; } }
+    if(e.key==="Tab"){ e.preventDefault(); ta.setRangeText("    ", s, ta.selectionEnd, "end"); ta.dispatchEvent(new Event("input")); }
+    if(e.key==="Enter"){ const lineStart=v.lastIndexOf("\n", s-1)+1, line=v.slice(lineStart, s); let ind=(line.match(/^ */)||[""])[0];
+      if(/\{\s*$/.test(line)) ind+="    "; e.preventDefault(); ta.setRangeText("\n"+ind, s, ta.selectionEnd, "end"); ta.dispatchEvent(new Event("input")); }
+  });
+}
+
+/* ---------- state ---------- */
+const VIEWS=[["skills","Skills","المهارات"],["programs","Programs","البرامج"],["mistakes","Mistakes","الأخطاء"],["howto","How to write","طريقة الكتابة"]];
+let st = { view: store.get("view","skills"), skill:null, prog:null, lang: store.get("lang","both") };
+if(!VIEWS.some(v=>v[0]===st.view)) st.view="skills";
+function setLang(){ document.body.classList.toggle("only-en", st.lang==="en"); document.body.classList.toggle("only-ar", st.lang==="ar");
+  document.querySelectorAll("[data-lang]").forEach(b=> b.setAttribute("aria-pressed", b.dataset.lang===st.lang)); }
+document.querySelectorAll("[data-lang]").forEach(b=> b.onclick=()=>{ st.lang=b.dataset.lang; store.set("lang",st.lang); setLang(); });
+
+function tabs(){
+  $("#tabs").innerHTML = VIEWS.map(v=>`<button class="tab" role="tab" aria-selected="${v[0]===st.view}" data-v="${v[0]}">${v[1]}<small>${v[2]}</small></button>`).join("");
+  $("#tabs").querySelectorAll("button").forEach(b=> b.onclick=()=>{ st.view=b.dataset.v; st.skill=null; st.prog=null; store.set("view",st.view); render(); scrollTo({top:0}); });
+}
+function render(){ tabs(); setLang();
+  if(st.view==="skills") return st.skill!=null ? skillPage(st.skill) : skillsIndex();
+  if(st.view==="programs") return st.prog!=null ? progPage(st.prog) : progIndex();
+  if(st.view==="mistakes") return mistakesPage();
+  return howtoPage();
+}
+
+/* ---------- Skills ---------- */
+const itemKey=(s,i)=>`item:${SKILLS[s].id}:${i}`;
+function skillDone(s){ return SKILLS[s].practice.filter((_,i)=> store.get(itemKey(s,i),{}).ok).length; }
+function skillsIndex(){
+  const groups=[...new Set(SKILLS.map(s=>s.ch))];
+  const total=SKILLS.reduce((a,s)=>a+s.practice.length,0), done=SKILLS.reduce((a,_,i)=>a+skillDone(i),0);
+  $("#main").innerHTML = `<div class="head"><div><div class="eyebrow">Part 1 · ${done} / ${total} exercises solved</div><h2>Writing skills, one form at a time</h2>
+    <div class="sub ar" dir="rtl">المهارات الأساسية: لكل فكرة الصيغة، وأشهر الأخطاء، وتمارين قصيرة تكتبها بيدك</div></div></div>
+    <p class="sub"><span class="en">Each skill shows the <strong>form</strong> to memorize, the mistakes students make with it, then short exercises you type yourself. Go in order, then move to Programs.</span>
+    <span class="ar" dir="rtl" style="display:block">كل مهارة فيها الصيغة اللي تحفظها، والأخطاء الشائعة، وتمارين قصيرة. امشِ بالترتيب وبعدين روح للبرامج.</span></p>
+    ${groups.map(g=>`<section class="grp"><div class="grp-h">${esc(g)}</div><div class="grid">${SKILLS.map((s,i)=>({s,i})).filter(o=>o.s.ch===g).map(({s,i})=>{
+      const d=skillDone(i), n=s.practice.length;
+      return `<button class="tile" data-s="${i}"><span class="chips"><span class="chip ${d===n?'ok':''}">${d} / ${n}</span></span><b>${esc(s.t)}</b><span class="ar" dir="rtl">${esc(s.ar)}</span><span class="meter"><i style="width:${d/n*100}%"></i></span></button>`; }).join("")}</div></section>`).join("")}`;
+  $("#main").querySelectorAll("[data-s]").forEach(b=> b.onclick=()=>{ st.skill=+b.dataset.s; render(); scrollTo({top:0}); });
+}
+function mistakeCards(list){
+  return `<div class="mist">${list.map(p=>`<div class="mcard"><div class="row">
+    <div class="side bad"><span class="lbl">✗ Wrong · خطأ</span>${code(p.bad)}</div>
+    <div class="side good"><span class="lbl">✓ Right · صح</span>${code(p.fix)}</div></div>
+    <div class="why"><span class="errname">${esc(p.err)}</span>${bi(p.en,p.ar)}</div></div>`).join("")}</div>`;
+}
+function skillPage(si){
+  const s=SKILLS[si];
+  $("#main").innerHTML = `<div class="head"><div><div class="eyebrow">${esc(s.ch)} · skill ${si+1} of ${SKILLS.length}</div><h2>${esc(s.t)}</h2><div class="sub" dir="rtl">${esc(s.ar)}</div></div>
+     <button class="btn small" id="back">← All skills · كل المهارات</button></div>
+    <h3 class="sec">The form <span class="ar">الصيغة</span></h3>${code(s.form)}
+    ${s.table?`<div class="tbl-wrap"><table><tr><th>When</th><th>Write</th><th>Call / use</th><th style="text-align:right">متى</th></tr>${s.table.map(r=>`<tr><td>${esc(r[0])}</td><td><code>${esc(r[1])}</code></td><td><code>${esc(r[2])}</code></td><td class="ar">${esc(r[3])}</td></tr>`).join("")}</table></div>`:""}
+    <h3 class="sec">Remember <span class="ar">تذكّر</span></h3>
+    <div class="card pairs">${s.points.map(p=>`<div class="pair"><div class="en">${inl(p[0])}</div><div class="ar" dir="rtl">${inl(p[1])}</div></div>`).join("")}</div>
+    <h3 class="sec">Common mistakes <span class="ar">أخطاء شائعة</span></h3>${mistakeCards(s.pitfalls)}
+    <h3 class="sec">Practice <span class="ar">تدرّب</span></h3><div class="items" id="items"></div>
+    <div class="pager">${si>0?`<button class="btn" id="prev">← ${esc(SKILLS[si-1].t)}</button>`:"<span></span>"}${si<SKILLS.length-1?`<button class="btn primary" id="next">${esc(SKILLS[si+1].t)} →</button>`:`<button class="btn primary" id="toprog">Go to Programs →</button>`}</div>`;
+  $("#back").onclick=()=>{ st.skill=null; render(); };
+  const p=$("#prev"); if(p) p.onclick=()=>{ st.skill=si-1; render(); scrollTo({top:0}); };
+  const n=$("#next"); if(n) n.onclick=()=>{ st.skill=si+1; render(); scrollTo({top:0}); };
+  const tp=$("#toprog"); if(tp) tp.onclick=()=>{ st.view="programs"; st.skill=null; store.set("view","programs"); render(); scrollTo({top:0}); };
+  const box=$("#items");
+  s.practice.forEach((it,i)=>{ const el=document.createElement("div"); el.className="item"; box.appendChild(el); drawItem(el, it, itemKey(si,i), i); });
+}
+const TNAME={write:["Write it","اكتبها"],fix:["Fix it","صحّحها"],fill:["Fill in","أكمل"],order:["Put in order","رتّب"],mcq:["Choose","اختر"]};
+function drawItem(el, it, key, idx){
+  const sv = store.get(key, {});
+  const save=()=>store.set(key, sv);
+  el.classList.toggle("done-ok", !!sv.ok);
+  let body="";
+  if(it.type==="write"||it.type==="fix"){
+    body = `<textarea class="code-in" spellcheck="false" autocapitalize="off" autocomplete="off" aria-label="Your code" placeholder="${it.type==='write'?'Type your code here…':''}">${esc(sv.val!=null? sv.val : (it.type==="fix"? it.start : ""))}</textarea>
+      <div class="actions"><button class="btn primary" data-a="check">Check · تحقق</button><button class="btn small" data-a="show">Show answer · الإجابة</button>${it.type==="fix"?'<button class="btn small" data-a="reset">Reset · إعادة</button>':''}</div>`;
+  } else if(it.type==="fill"){
+    const parts=esc(it.code).split("___");
+    body = `<pre class="code"><code>${parts.map((p,i)=> p+(i<parts.length-1?`<input class="blank" spellcheck="false" autocomplete="off" aria-label="Blank ${i+1}" size="${Math.max(5,it.blanks[i].length+1)}" value="${esc((sv.vals||[])[i]||"")}">`:"")).join("")}</code></pre>
+      <div class="actions"><button class="btn primary" data-a="check">Check · تحقق</button><button class="btn small" data-a="show">Show answer · الإجابة</button></div>`;
+  } else if(it.type==="mcq"){
+    const order = sv.order || (sv.order = shuffle(it.options.map((_,i)=>i)));
+    body = `<div class="opts">${order.map(o=>`<button class="opt" data-o="${o}"><code style="background:none;padding:0">${esc(it.options[o])}</code></button>`).join("")}</div>`;
+  } else if(it.type==="order"){
+    body = `<div class="parsons-host"></div>`;
+  }
+  el.innerHTML = `<div class="chips"><span class="chip">${idx+1} · ${TNAME[it.type][0]} · ${TNAME[it.type][1]}</span>${sv.ok?'<span class="chip ok">Solved · تم</span>':''}</div>
+    <p class="q en">${inl(it.q)}</p><p class="qa ar" dir="rtl">${inl(it.qa||"")}</p>${body}<div class="fbhost"></div>`;
+  const fb=(ok, extra)=>{ el.querySelector(".fbhost").innerHTML = `<div class="fb ${ok?'ok':'no'}"><span class="v">${ok?"Correct · صحيح":"Not yet · مو بعد"}</span>${extra||""}${bi(it.en,it.ar)}</div>`; };
+  const mark=(ok)=>{ if(ok){ sv.ok=true; el.classList.add("done-ok"); } save(); };
+  if(it.type==="write"||it.type==="fix"){
+    const ta=el.querySelector("textarea"); smart(ta);
+    ta.oninput=()=>{ sv.val=ta.value; save(); };
+    const answerBox = ()=> `<div><strong>Model answer · الإجابة النموذجية</strong>${code(it.accept[0])}${it.accept.length>1||it.re?'<span class="sub en">Other correct forms are also accepted.</span>':''}</div>`;
+    el.querySelector('[data-a="check"]').onclick=()=>{ const ok=matches(it, ta.value); mark(ok);
+      fb(ok, ok? "" : answerBox() + `<div class="actions" style="margin-top:0"><button class="btn small" data-a="mine">Mine is also correct · إجابتي صحيحة</button></div>`);
+      const m=el.querySelector('[data-a="mine"]'); if(m) m.onclick=()=>{ mark(true); fb(true); }; };
+    el.querySelector('[data-a="show"]').onclick=()=>{ el.querySelector(".fbhost").innerHTML = `<div class="fb">${answerBox()}${bi(it.en,it.ar)}</div>`; };
+    const r=el.querySelector('[data-a="reset"]'); if(r) r.onclick=()=>{ sv.val=it.start; save(); drawItem(el,it,key,idx); };
+  }
+  if(it.type==="fill"){
+    const ins=[...el.querySelectorAll("input.blank")];
+    ins.forEach(x=> x.oninput=()=>{ sv.vals=ins.map(y=>y.value); save(); });
+    el.querySelector('[data-a="check"]').onclick=()=>{ const res=it.blanks.map((b,i)=> norm(ins[i].value)===norm(b)); ins.forEach((x,i)=>{ x.classList.toggle("right",res[i]); x.classList.toggle("wrong",!res[i]); });
+      const ok=res.every(Boolean); mark(ok); fb(ok, ok?"":`<div>Answers: ${it.blanks.map(b=>`<code>${esc(b)}</code>`).join(" · ")}</div>`); };
+    el.querySelector('[data-a="show"]').onclick=()=>{ ins.forEach((x,i)=>{ x.value=it.blanks[i]; }); sv.vals=it.blanks.slice(); save(); };
+  }
+  if(it.type==="mcq"){
+    const bs=el.querySelectorAll(".opt");
+    const paint=()=> bs.forEach(b=>{ const o=+b.dataset.o; b.disabled=true; if(o===it.answer) b.classList.add("right"); else if(o===sv.pick) b.classList.add("wrong"); });
+    if(sv.pick!=null){ paint(); fb(sv.pick===it.answer); }
+    else bs.forEach(b=> b.onclick=()=>{ sv.pick=+b.dataset.o; const ok=sv.pick===it.answer; mark(ok); paint(); fb(ok); });
+  }
+  if(it.type==="order"){
+    parsons(el.querySelector(".parsons-host"), it.lines, sv, save, ok=>{ mark(ok); fb(ok); });
+  }
+}
+/* Parsons: tap lines from the pool to build the program */
+function parsons(host, lines, sv, save, onCheck){
+  if(!sv.pool){ sv.pool = shuffle(lines.map((_,i)=>i)); sv.ans=[]; }
+  const draw=(checked)=>{
+    host.innerHTML = `<div class="parsons">
+      <div class="pane"><div class="pane-h">Your program · برنامجك (tap a line to remove)</div><div class="plist" id="ans">${sv.ans.length? sv.ans.map((li,k)=>`<button class="pline ${checked? (lines[li]===lines[k]?'right':'wrong'):''}" data-k="${k}">${hl(lines[li])||" "}</button>`).join("") : '<div class="empty">Tap lines on the right, in order. · اضغط الأسطر بالترتيب</div>'}</div></div>
+      <div class="pane"><div class="pane-h">Lines · الأسطر (${sv.pool.length} left)</div><div class="plist" id="pool">${sv.pool.length? sv.pool.map((li,k)=>`<button class="pline" data-p="${k}">${hl(lines[li])||" "}</button>`).join("") : '<div class="empty">All lines used. · خلّصت الأسطر</div>'}</div></div></div>
+      <div class="actions"><button class="btn primary" data-a="pcheck" ${sv.pool.length?'disabled':''}>Check order · تحقق</button><button class="btn small" data-a="preset">Start over · من جديد</button><button class="btn small" data-a="pshow">Show answer · الإجابة</button></div>`;
+    host.querySelectorAll("[data-p]").forEach(b=> b.onclick=()=>{ sv.ans.push(sv.pool.splice(+b.dataset.p,1)[0]); save(); draw(); });
+    host.querySelectorAll("[data-k]").forEach(b=> b.onclick=()=>{ sv.pool.push(sv.ans.splice(+b.dataset.k,1)[0]); save(); draw(); });
+    host.querySelector('[data-a="pcheck"]').onclick=()=>{ const ok = sv.ans.every((li,k)=> lines[li]===lines[k]); draw(true); onCheck(ok); };
+    host.querySelector('[data-a="preset"]').onclick=()=>{ sv.pool=shuffle(lines.map((_,i)=>i)); sv.ans=[]; save(); draw(); };
+    host.querySelector('[data-a="pshow"]').onclick=()=>{ sv.ans=lines.map((_,i)=>i); sv.pool=[]; save(); draw(true); };
+  };
+  draw();
+}
+
+/* ---------- Programs ---------- */
+const LVL={1:["Level 1 · warm-up","المستوى 1 · تسخين"],2:["Level 2 · two ideas together","المستوى 2 · فكرتين مع بعض"],3:["Level 3 · functions return values","المستوى 3 · دوال ترجع قيم"],4:["Level 4 · combine chapters","المستوى 4 · دمج الفصول"],5:["Level 5 · exam style","المستوى 5 · مثل الاختبار"]};
+const progKey=i=>`prog:${i}`;
+function progIndex(){
+  $("#main").innerHTML = `<div class="head"><div><div class="eyebrow">Part 2 · ${PROGRAMS.length} programs, levels 1 → 5</div><h2>Write whole programs</h2>
+    <div class="sub ar" dir="rtl">برامج كاملة متدرجة، تبدأ بفكرة وحدة وتنتهي بدمج الأفكار مثل الاختبار</div></div></div>
+    <p class="sub"><span class="en">Try first without help. Stuck? Open <strong>Help</strong> for the program's flow one hint at a time and the forms you need. Still stuck? Use <strong>Arrange mode</strong> to build it from shuffled lines.</span>
+    <span class="ar" dir="rtl" style="display:block">جرّب أول بدون مساعدة. إذا علّقت افتح المساعدة وشوف التلميحات وحدة وحدة والصيغ اللي تحتاجها. وإذا لسا صعب، استخدم وضع الترتيب.</span></p>
+    ${[1,2,3,4,5].map(l=>`<div class="lvl-h"><b>${LVL[l][0]}</b><span class="sub ar" dir="rtl">${LVL[l][1]}</span></div><div class="prog-list">${PROGRAMS.map((p,i)=>({p,i})).filter(o=>o.p.lvl===l).map(({p,i})=>{ const s=store.get(progKey(i),{});
+      const tag = s.score==null? "" : s.score===1? '<span class="chip ok">Got it</span>' : s.score>0? '<span class="chip warn">Partly</span>' : '<span class="chip">Missed</span>';
+      return `<button class="prog" data-p="${i}"><span><span class="chips" style="margin-bottom:4px">${p.ideas.map(x=>`<span class="chip">${esc(SKILLS.find(s=>s.id===x).t.split(":")[0])}</span>`).join("")}${tag}</span><b>${esc(p.t)}</b><br><span class="ar" dir="rtl">${esc(p.ar)}</span></span><span class="sub" aria-hidden="true">→</span></button>`; }).join("")}</div>`).join("")}`;
+  $("#main").querySelectorAll("[data-p]").forEach(b=> b.onclick=()=>{ st.prog=+b.dataset.p; render(); scrollTo({top:0}); });
+}
+function progPage(pi){
+  const p=PROGRAMS[pi], sv=store.get(progKey(pi),{}), save=()=>store.set(progKey(pi),sv);
+  sv.hints = sv.hints||0;
+  const lines = p.model.split("\n").filter(l=>l.trim()!=="");
+  $("#main").innerHTML = `<div class="head"><div><div class="eyebrow">${LVL[p.lvl][0]} · program ${pi+1} of ${PROGRAMS.length}</div><h2>${esc(p.t)}</h2><div class="sub" dir="rtl">${esc(p.ar)}</div></div>
+     <button class="btn small" id="back">← All programs · كل البرامج</button></div>
+    <div class="card"><p class="task en" style="margin-top:0">${inl(p.task)}</p><p class="ar-block ar" dir="rtl" style="margin:0">${inl(p.arTask)}</p>
+      <div class="io">${p.input?`<div><div class="pane-h">Input typed by the user · المدخلات</div><pre class="code"><code>${esc(p.input.replace(/\n$/,""))}</code></pre></div>`:""}
+      <div><div class="pane-h">Expected output · الناتج المتوقع</div><pre class="code"><code>${esc(p.output)}</code></pre></div></div></div>
+    <details class="help" id="help" ${sv.helpOpen?'open':''}><summary>Help · مساعدة <span class="sub" style="font-weight:500;font-family:var(--body)">hints, forms, steps</span></summary><div class="help-body">
+      <div><div class="pane-h">Program flow, one hint at a time · تسلسل البرنامج</div><ol class="hint-list" id="hints"></ol><div class="actions" id="hintbtn"></div></div>
+      <div><div class="pane-h">Forms you'll need · الصيغ اللي تحتاجها</div>${p.forms.map(id=>{ const s=SKILLS.find(x=>x.id===id); return `<details class="formbox"><summary>${esc(s.t)} · <span dir="rtl">${esc(s.ar)}</span></summary>${code(s.form)}</details>`; }).join("")}</div>
+      <div><div class="pane-h">Watch out · انتبه</div><ul class="hint-list">${p.mistakes.map(m=>`<li>${bi(m[0],m[1])}</li>`).join("")}</ul></div>
+      <div><div class="pane-h">Steps for any program · خطوات أي برنامج</div><ol class="hint-list">${STEPS.map(s=>`<li>${bi(s[0],s[1])}</li>`).join("")}</ol></div>
+    </div></details>
+    <div class="seg" role="group" aria-label="Mode" style="margin-top:16px"><button data-m="write" aria-pressed="${sv.mode!=='arrange'}">Write it · اكتب</button><button data-m="arrange" aria-pressed="${sv.mode==='arrange'}">Arrange mode (easier) · رتّب</button></div>
+    <div id="work" style="margin-top:10px"></div>
+    <div id="modelhost"></div>
+    <div class="pager">${pi>0?`<button class="btn" id="prev">← ${esc(PROGRAMS[pi-1].t)}</button>`:"<span></span>"}${pi<PROGRAMS.length-1?`<button class="btn primary" id="next">${esc(PROGRAMS[pi+1].t)} →</button>`:"<span></span>"}</div>`;
+  $("#back").onclick=()=>{ st.prog=null; render(); };
+  const pv=$("#prev"); if(pv) pv.onclick=()=>{ st.prog=pi-1; render(); scrollTo({top:0}); };
+  const nx=$("#next"); if(nx) nx.onclick=()=>{ st.prog=pi+1; render(); scrollTo({top:0}); };
+  $("#help").addEventListener("toggle", e=>{ sv.helpOpen=e.target.open; save(); });
+  const drawHints=()=>{
+    $("#hints").innerHTML = p.hints.slice(0,sv.hints).map((h,k)=>`<li>${bi(h,p.arHints[k])}</li>`).join("") || `<li style="list-style:none;margin-left:-1.4em" class="sub">${bi("No hints shown yet.","ما فيه تلميحات بعد.")}</li>`;
+    $("#hintbtn").innerHTML = sv.hints<p.hints.length? `<button class="btn small" id="morehint">Next hint (${sv.hints+1}/${p.hints.length}) · التلميح التالي</button>` : "";
+    const mh=$("#morehint"); if(mh) mh.onclick=()=>{ sv.hints++; save(); drawHints(); };
+  };
+  drawHints();
+  const drawModel=()=>{
+    $("#modelhost").innerHTML = !sv.revealed ? `<div class="actions"><button class="btn" id="reveal">Show model answer · الحل النموذجي</button></div>` :
+      `<h3 class="sec">Model answer <span class="ar">الحل النموذجي</span></h3>${code(p.model)}
+       <div class="actions"><span class="sub">How did you do? · قيّم نفسك</span><button class="btn small" data-s="1" aria-pressed="${sv.score===1}">Got it · صح</button><button class="btn small" data-s="0.5">Partly · جزئي</button><button class="btn small" data-s="0">Missed · غلط</button>
+       ${sv.score!=null?`<span class="chip ${sv.score===1?'ok':sv.score>0?'warn':''}">${sv.score===1?"Got it":sv.score>0?"Partly":"Missed"}</span>`:""}</div>`;
+    const r=$("#reveal"); if(r) r.onclick=()=>{ sv.revealed=true; save(); drawModel(); };
+    $("#modelhost").querySelectorAll("[data-s]").forEach(b=> b.onclick=()=>{ sv.score=+b.dataset.s; save(); drawModel(); });
+  };
+  const drawWork=()=>{
+    if(sv.mode==="arrange"){
+      sv.parsons = sv.parsons || {};
+      $("#work").innerHTML = `<p class="sub" style="margin:0 0 8px">${bi("Build the program from its lines. Some lines (like the order of two functions or two fields) could swap in real Rust; here they are checked against the model.","كوّن البرنامج من أسطره. بعض الأسطر ممكن تتبدل في Rust الحقيقي (مثل ترتيب دالتين)، بس هنا تتقارن مع الحل النموذجي.")}</p><div id="phost"></div><div class="fbhost"></div>`;
+      parsons($("#phost"), lines, sv.parsons, save, ok=>{ $("#work .fbhost").innerHTML = `<div class="fb ${ok?'ok':'no'}"><span class="v">${ok?"Correct order · ترتيب صحيح":"Some lines are out of place · فيه أسطر مو بمكانها"}</span></div>`; });
+    } else {
+      $("#work").innerHTML = `<textarea class="code-in" id="ed" spellcheck="false" autocapitalize="off" autocomplete="off" aria-label="Your program" style="min-height:300px" placeholder="fn main() {\n    \n}">${esc(sv.code||"")}</textarea>
+        <p class="sub" style="margin:6px 0 0;font-size:.85rem">${bi("Tab adds 4 spaces; Enter keeps the indentation. Compare with the expected output and the model answer.","Tab يضيف 4 مسافات، و Enter يحافظ على المسافة البادئة.")}</p>`;
+      const ed=$("#ed"); smart(ed); ed.oninput=()=>{ sv.code=ed.value; save(); };
+    }
+  };
+  $("#main").querySelectorAll("[data-m]").forEach(b=> b.onclick=()=>{ sv.mode=b.dataset.m; save(); $("#main").querySelectorAll("[data-m]").forEach(x=>x.setAttribute("aria-pressed", x.dataset.m===(sv.mode==="arrange"?"arrange":"write"))); drawWork(); });
+  drawWork(); drawModel();
+}
+
+/* ---------- Mistakes ---------- */
+function mistakesPage(){
+  $("#main").innerHTML = `<div class="head"><div><div class="eyebrow">${SKILLS.reduce((a,s)=>a+s.pitfalls.length,0)} mistakes · grouped by skill</div><h2>Mistakes to avoid while writing</h2>
+    <div class="sub ar" dir="rtl">الأخطاء اللي ممكن تقع فيها وأنت تكتب، مع اسم الخطأ والتصحيح</div></div>
+    <input class="search" id="q" type="search" placeholder="Search: mut, &mut, struct, moved…" aria-label="Search mistakes"></div><div id="ml"></div>`;
+  const draw=(f)=>{ const t=(f||"").toLowerCase();
+    $("#ml").innerHTML = SKILLS.map(s=>{ const list=s.pitfalls.filter(p=>!t || (p.bad+p.fix+p.err+p.en+p.ar+s.t).toLowerCase().includes(t)); return list.length? `<h3 class="sec">${esc(s.t)} <span class="ar">${esc(s.ar)}</span></h3>${mistakeCards(list)}`:""; }).join("") || `<p class="sub">No match.</p>`; };
+  $("#q").oninput=e=>draw(e.target.value); draw();
+}
+
+/* ---------- How to write ---------- */
+function howtoPage(){
+  const T=(rows,h)=>`<div class="tbl-wrap"><table><tr>${h.map(x=>`<th>${x}</th>`).join("")}<th style="text-align:right">بالعربي</th></tr>${rows.map(r=>`<tr>${r.slice(0,-1).map((c,i)=>`<td>${i?`<code>${esc(c)}</code>`:esc(c)}</td>`).join("")}<td class="ar">${esc(r[r.length-1])}</td></tr>`).join("")}</table></div>`;
+  $("#main").innerHTML = `<div class="head"><div><div class="eyebrow">Read once, then use while writing</div><h2>How to write a Rust program in the exam</h2>
+    <div class="sub ar" dir="rtl">خطوات كتابة أي برنامج، وجداول تساعدك تختار الصيغة الصح</div></div></div>
+    <ol class="steps">${STEPS.map(s=>`<li>${bi(s[0],s[1])}</li>`).join("")}</ol>
+    <h3 class="sec">Which data shape? <span class="ar">أي شكل للبيانات؟</span></h3>
+    ${T([["Values with names (a person, a product)","struct P { name: String, age: u32 }","قيم لها أسماء"],["2–3 values, maybe of different types","(i32, f64)","قيمتين أو ثلاث"],["Many values of one type, fixed count","[i32; 5]","قيم كثيرة من نوع واحد"],["A function must give back 2+ values","-> (u32, f64)","إرجاع أكثر من قيمة"],["Text you build or change","String","نص تبنيه أو تعدله"],["Text you only read","&str","نص للقراءة"]],["Situation","Use"])}
+    <h3 class="sec">How to send it to a function <span class="ar">كيف ترسلها للدالة</span></h3>
+    ${T([["Read only","p: &T  →  f(&x)","قراءة"],["Change it","p: &mut T  →  f(&mut x), let mut x","تعديل"],["Give it away","p: T  →  f(x)  (x moved)","تسليم الملكية"],["Numbers, bool, char","p: i32  →  f(x)  (copied)","أنواع تنسخ"],["Array of any length","p: &[i32]  →  f(&a)","مصفوفة بأي طول"]],["Need","Parameter → call"])}
+    <h3 class="sec">Which loop? <span class="ar">أي حلقة؟</span></h3>
+    ${T([["Every element of an array","for x in a { }","كل عنصر"],["A counted range","for i in 1..=n { }","عدد معروف"],["While a condition holds","while n > 0 { n -= 1; }","طالما الشرط صحيح"],["Until something happens / need a result","let r = loop { break v; };","لين يصير شي"],["Ask the user until valid input","loop { … Err(_) => continue … break; }","لين يدخل إدخال صحيح"]],["Task","Loop"])}
+    <h3 class="sec">Which self? <span class="ar">أي self؟</span></h3>
+    ${T([["Method reads fields","fn area(&self) -> u32","قراءة"],["Method changes fields","fn grow(&mut self)  +  let mut r","تعديل"],["Constructor / helper with no instance","fn new(..) -> Self  →  Type::new(..)","إنشاء"]],["Method","Signature"])}
+    <h3 class="sec">Last check before you hand in <span class="ar">مراجعة أخيرة</span></h3>
+    <div class="card pairs">${[["Every `{` has its `}`; struct fields end with `,`.","كل `{` لها `}`، وحقول الـ struct تنتهي بـ `,`."],["`mut` on every variable you change, `&mut` on both sides.","`mut` لكل متغير يتغير، و `&mut` في الطرفين."],["The returned value has no `;`; the return type is after `->`.","القيمة المرجعة بدون `;` ونوعها بعد `->`."],["No int + float mixing: write `2.0`, or use `as f64`.","لا تخلط صحيح مع عشري: اكتب `2.0` أو `as f64`."],["Strings in structs: `String::from(\"..\")`.","النصوص في الـ struct: `String::from(\"..\")`."],["Printing a struct: `#[derive(Debug)]` + `{:?}`.","طباعة struct: `#[derive(Debug)]` مع `{:?}`."],["Output format matches the question exactly (spaces, commas).","شكل الطباعة نفس المطلوب بالضبط."]].map(p=>`<div class="pair"><div class="en">${inl(p[0])}</div><div class="ar" dir="rtl">${inl(p[1])}</div></div>`).join("")}</div>`;
+}
+
+render();
+})();
+</script>
+
+</body></html>
